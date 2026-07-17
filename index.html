@@ -96,10 +96,10 @@
 
   /* 玻璃控制台 */
   .console {
-    background: var(--glass); border: 1px solid var(--line); border-radius: 22px;
+    background: var(--glass); border: 1px solid var(--line); border-radius: 26px;
     backdrop-filter: blur(20px) saturate(1.2); -webkit-backdrop-filter: blur(20px) saturate(1.2);
-    box-shadow: 0 24px 70px rgba(0,0,0,.35); padding: 16px 16px 15px;
-    display: flex; flex-direction: column; gap: 15px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.22); padding: 18px 18px 17px;
+    display: flex; flex-direction: column; gap: 20px;
   }
 
   /* 走带 */
@@ -112,10 +112,14 @@
   }
   .play:hover { transform: scale(1.04); }
   .play:active { transform: scale(.96); }
-  .play.playing { box-shadow: 0 0 0 1px color-mix(in oklab, var(--warm) 55%, transparent), 0 10px 40px color-mix(in oklab, var(--warm) 30%, transparent); }
+  .play.playing { box-shadow: 0 0 0 1px color-mix(in oklab, var(--warm) 50%, transparent), 0 10px 40px color-mix(in oklab, var(--warm) 28%, transparent); animation: breathe 4.6s ease-in-out infinite; }
   .play svg { width: 26px; height: 26px; }
   .play.nudge { animation: nudge .42s ease; }
   @keyframes nudge { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+  @keyframes breathe {
+    0%, 100% { box-shadow: 0 0 0 1px color-mix(in oklab, var(--warm) 42%, transparent), 0 6px 24px color-mix(in oklab, var(--warm) 18%, transparent); }
+    50%      { box-shadow: 0 0 0 1px color-mix(in oklab, var(--warm) 62%, transparent), 0 16px 52px color-mix(in oklab, var(--warm) 42%, transparent); }
+  }
 
   .transport-mid { flex: 1; display: flex; flex-direction: column; gap: 7px; min-width: 0; }
   .transport-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
@@ -137,8 +141,8 @@
   .mixer { display: flex; flex-direction: column; gap: 11px; }
   .mixer.empty-hide { display: none; }
   .mixer-head { display: flex; align-items: center; justify-content: space-between; }
-  .eyebrow { font-family: var(--mono); font-size: 10px; letter-spacing: .24em; color: var(--ink-faint); text-transform: uppercase; }
-  .clear { appearance: none; border: none; background: none; color: var(--ink-faint); font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
+  .eyebrow { font-family: var(--serif); font-style: italic; font-size: 13px; letter-spacing: .01em; color: var(--ink-faint); }
+  .clear { appearance: none; border: none; background: none; color: var(--ink-faint); font-family: var(--mono); font-size: 10.5px; letter-spacing: .04em; cursor: pointer; }
   .clear:hover { color: var(--warm); }
   .layer { display: grid; grid-template-columns: 4px 60px 1fr auto; align-items: center; gap: 10px; }
   .layer .swatch { width: 4px; height: 22px; border-radius: 2px; }
@@ -176,25 +180,55 @@
   .tchip[aria-pressed="true"] { color: #0c1413; background: var(--warm); border-color: transparent; }
   .countdown { font-family: var(--mono); font-size: 11px; color: var(--warm); margin-left: auto; font-variant-numeric: tabular-nums; }
 
-  /* 预设 · 会话恢复 */
-  .presets { display: flex; flex-direction: column; gap: 10px; }
-  .presets.solo-empty { display: flex; }
-  .preset-head { display: flex; align-items: center; justify-content: space-between; }
-  .save-preset { appearance: none; border: none; background: none; color: var(--ink-faint); font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
-  .save-preset:hover { color: var(--aurora); }
-  .pchips { display: flex; gap: 7px; flex-wrap: wrap; }
-  .pchip { position: relative; appearance: none; cursor: pointer; font-family: var(--sans); font-size: 12.5px; padding: 7px 13px; border-radius: 11px; border: 1px solid var(--line-strong); background: var(--glass-2); color: var(--ink-dim); transition: color .15s, border-color .15s, transform .08s; }
-  .pchip:hover { color: var(--ink); border-color: var(--aurora); }
-  .pchip:active { transform: scale(.95); }
-  .pchip.custom { padding-right: 27px; }
-  .pchip .del { position: absolute; right: 5px; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; display: grid; place-items: center; border-radius: 50%; font-size: 14px; line-height: 1; color: var(--ink-faint); }
-  .pchip .del:hover { color: var(--warm); }
+  /* 调频拨盘（电台）· 会话恢复 */
+  .tuner { display: flex; flex-direction: column; gap: 12px; }
+  .tuner-top { display: flex; align-items: baseline; gap: 10px; }
+  .freqread { display: flex; align-items: baseline; gap: 4px; flex: none; }
+  .freq { font-family: var(--mono); font-size: 30px; font-weight: 600; letter-spacing: .01em; color: var(--warm); font-variant-numeric: tabular-nums; line-height: 1; text-shadow: 0 0 18px color-mix(in oklab, var(--warm) 42%, transparent); }
+  .freq-u { font-family: var(--mono); font-size: 10.5px; letter-spacing: .18em; color: var(--ink-faint); text-transform: uppercase; }
+  .station-now { font-family: var(--serif); font-style: italic; font-size: 15px; color: var(--ink-dim); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .del-station { appearance: none; border: none; background: none; color: var(--ink-faint); font-family: var(--mono); font-size: 10.5px; letter-spacing: .04em; cursor: pointer; flex: none; }
+  .del-station:hover { color: var(--warm); }
+  .del-station[hidden] { display: none; }
+
+  .dial { position: relative; height: 92px; border-radius: 16px; cursor: ew-resize; touch-action: none; user-select: none; -webkit-user-select: none; overflow: hidden;
+    border: 1px solid var(--line);
+    background: radial-gradient(120% 150% at 50% 128%, color-mix(in oklab, var(--warm) 15%, transparent), transparent 58%), var(--glass-2);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.05), inset 0 -16px 34px rgba(0,0,0,.20); }
+  .dial:focus-visible { outline: 2px solid var(--aurora); outline-offset: 3px; }
+  .dial-inner { position: absolute; inset: 0 16px; }
+  .dial-stations { position: absolute; left: 0; right: 0; top: 11px; height: 22px; }
+  .stn { position: absolute; top: 0; transform: translateX(-50%); max-width: 66px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    appearance: none; border: none; background: none; cursor: pointer; padding: 0;
+    font-family: var(--serif); font-style: italic; font-size: 12px; color: var(--ink-faint); transition: color .18s, text-shadow .18s; }
+  .stn::after { content: ""; display: block; width: 3px; height: 3px; border-radius: 50%; background: currentColor; margin: 3px auto 0; opacity: .55; }
+  .stn.near { color: var(--ink-dim); }
+  .stn.lit { color: var(--warm); text-shadow: 0 0 12px color-mix(in oklab, var(--warm) 55%, transparent); }
+  .stn.custom { cursor: grab; }
+  .stn.custom::after { width: 5px; height: 5px; background: transparent; border: 1px solid currentColor; opacity: .6; }
+  .stn.custom.dragging { cursor: grabbing; color: var(--warm); z-index: 3; }
+  .dial-scale { position: absolute; left: 0; right: 0; bottom: 9px; height: 38px; }
+  .tick { position: absolute; bottom: 15px; width: 1px; height: 6px; transform: translateX(-50%); background: var(--line-strong); }
+  .tick.major { height: 11px; background: var(--ink-faint); }
+  .tnum { position: absolute; bottom: 0; transform: translateX(-50%); font-family: var(--mono); font-size: 9px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+  .needle { position: absolute; top: 7px; bottom: 7px; left: 0; width: 2px; transform: translateX(-50%); border-radius: 2px; pointer-events: none;
+    background: linear-gradient(180deg, color-mix(in oklab, var(--warm) 92%, transparent), color-mix(in oklab, var(--warm) 38%, transparent));
+    box-shadow: 0 0 10px color-mix(in oklab, var(--warm) 70%, transparent), 0 0 22px color-mix(in oklab, var(--warm) 38%, transparent); }
+  .needle-tip { position: absolute; top: -5px; left: 50%; transform: translateX(-50%); width: 0; height: 0;
+    border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 6px solid var(--warm);
+    filter: drop-shadow(0 0 4px color-mix(in oklab, var(--warm) 70%, transparent)); }
+  .dial.anim .needle { transition: left .45s cubic-bezier(.22,.61,.36,1); }
+  .dial.manual .needle { opacity: .32; }
+
   .resume { appearance: none; cursor: pointer; text-align: left; width: 100%; font-family: var(--sans); font-size: 13px; padding: 11px 14px; border-radius: 13px; border: 1px solid var(--line-strong); color: var(--ink); display: flex; align-items: center; gap: 9px;
     background: radial-gradient(130% 170% at 12% 20%, color-mix(in oklab, var(--warm) 20%, transparent), transparent 68%), var(--glass-2); transition: border-color .18s, transform .1s; }
   .resume::before { content: "↻"; color: var(--warm); font-size: 16px; }
   .resume:hover { border-color: var(--warm); }
   .resume:active { transform: scale(.985); }
   .resume[hidden] { display: none; }   /* 类选择器的 display:flex 会盖过 [hidden]，显式复位 */
+  .save-preset { appearance: none; border: none; background: none; color: var(--ink-faint); font-family: var(--mono); font-size: 10.5px; letter-spacing: .04em; cursor: pointer; flex: none; }
+  .save-preset:hover { color: var(--aurora); }
+  .save-preset[hidden] { display: none; }
   .mix-actions { display: flex; gap: 12px; }
 
   /* toast */
@@ -204,18 +238,27 @@
     opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s; z-index: 5; max-width: 90vw; text-align: center; }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+  /* 调频雪花：仅在调台途中浮现，绑定到背景、不影响 UI */
+  .static-vh { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0; transition: opacity .35s; mix-blend-mode: overlay;
+    background-image:
+      repeating-linear-gradient(0deg, rgba(255,255,255,.05) 0 1px, transparent 1px 3px),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E"); }
+  body.tuning .static-vh { opacity: .45; animation: staticShift .18s steps(2) infinite; }
+  @keyframes staticShift { from { background-position: 0 0, 0 0; } to { background-position: 10px -7px, 0 0; } }
+
   :focus-visible { outline: 2px solid var(--aurora); outline-offset: 3px; border-radius: 8px; }
   @media (prefers-reduced-motion: reduce) { *:not(#scene) { animation: none !important; transition: none !important; } }
 </style>
 </head>
 <body>
   <canvas id="scene" aria-hidden="true"></canvas>
+  <div class="static-vh" id="static" aria-hidden="true"></div>
 
   <div class="app">
     <header>
       <div>
         <div class="wordmark">Lull</div>
-        <div class="tagline">声音气象台 · Atmospheres</div>
+        <div class="tagline">声音电台 · Night FM</div>
       </div>
       <button class="icon-btn" id="theme" aria-label="切换深浅主题" title="切换主题">
         <svg id="theme-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></svg>
@@ -242,13 +285,22 @@
         </div>
       </div>
 
-      <div class="presets" id="presets-wrap">
+      <div class="tuner" id="tuner-wrap">
         <button class="resume" id="resume" hidden></button>
-        <div class="preset-head">
-          <span class="eyebrow">Presets · 氛围预设</span>
-          <button class="save-preset" id="save-preset" hidden>+ 存为预设</button>
+        <div class="tuner-top">
+          <div class="freqread"><span class="freq" id="freq">— —</span><span class="freq-u">MHz</span></div>
+          <span class="station-now" id="station-now">静默 · 未调频</span>
+          <button class="del-station" id="del-station" hidden>移除此频道</button>
+          <button class="save-preset" id="save-preset" hidden>+ 存为频道</button>
         </div>
-        <div class="pchips" id="pchips" role="group" aria-label="预设"></div>
+        <div class="dial" id="dial" role="slider" tabindex="0" aria-label="调频 · 频道选择"
+             aria-valuemin="87.5" aria-valuemax="108" aria-valuenow="87.5" aria-valuetext="未调频">
+          <div class="dial-inner" id="dial-inner">
+            <div class="dial-stations" id="dial-stations"></div>
+            <div class="dial-scale" id="dial-scale"></div>
+            <div class="needle" id="needle"><span class="needle-tip"></span></div>
+          </div>
+        </div>
       </div>
 
       <div class="mixer empty-hide" id="mixer-wrap">
@@ -261,8 +313,6 @@
         </div>
         <div id="mixer"></div>
       </div>
-
-      <div class="divider"></div>
 
       <div>
         <div class="tabs" id="tabs" role="tablist"></div>
@@ -605,13 +655,13 @@
     ensureCtx(); if (ctx.state==='suspended') ctx.resume();
     if (layers.has(id)) removeLayer(id, true);
     else { layers.set(id, buildLayer(byId(id))); if (!masterPlaying) setPlaying(true); }
-    reflectChips(); renderMixer(); reflectState(); persistMix(); updateMediaSession();
+    reflectChips(); renderMixer(); reflectState(); persistMix(); updateMediaSession(); reflectTuner();
   }
   function toggleMaster(){
     if (layers.size===0){ if (pendingMix){ const m=pendingMix; pendingMix=null; loadMix(m, true); return; } nudge(); return; }
     ensureCtx(); if (masterPlaying) setPlaying(false); else { if (ctx.state==='suspended') ctx.resume(); setPlaying(true); } reflectState();
   }
-  function clearAll(){ [...layers.keys()].forEach(id => removeLayer(id, false)); setPlaying(false); reflectChips(); renderMixer(); reflectState(); cancelTimer(); setTimerChips('off'); persistMix(); updateMediaSession(); }
+  function clearAll(){ [...layers.keys()].forEach(id => removeLayer(id, false)); setPlaying(false); reflectChips(); renderMixer(); reflectState(); cancelTimer(); setTimerChips('off'); persistMix(); updateMediaSession(); reflectTuner(); }
   function setLayerVol(id, v){ soundVol[id]=v/100; localStorage.setItem('lull.svol', JSON.stringify(soundVol)); const l=layers.get(id); if (l && l.gain && ctx){ const now=ctx.currentTime; l.gain.gain.cancelScheduledValues(now); l.gain.gain.setValueAtTime(Math.max(l.gain.gain.value,0.0001), now); l.gain.gain.linearRampToValueAtTime(layerTarget(id), now+0.12); } persistMixSoon(); }
   function setMasterVol(v){ masterVol=v; localStorage.setItem('lull.mvol', String(v)); $('vol-val').textContent=v; $('vol').style.setProperty('--fill', v+'%'); if (masterPlaying && ctx) rampMaster(masterTarget(), 0.15); }
 
@@ -641,7 +691,7 @@
     localStorage.setItem('lull.svol', JSON.stringify(soundVol));
     ids.forEach(id=>{ if (layers.has(id)) setLayerVol(id, mix[id]); else layers.set(id, buildLayer(byId(id))); });
     if (play){ if (!masterPlaying) setPlaying(true); else if (ctx) rampMaster(masterTarget(), 0.3); }
-    reflectChips(); renderMixer(); reflectState(); persistMix(); updateMediaSession();
+    reflectChips(); renderMixer(); reflectState(); persistMix(); updateMediaSession(); reflectTuner();
   }
   function reflectResume(){
     const btn=$('resume');
@@ -666,33 +716,152 @@
 
   // ---------- 预设（F-4）----------
   const BUILTIN_PRESETS = [
-    { id:'rainynight',    name:'雨夜', mix:{ hrain:62, storm:34, wind:22 } },
-    { id:'morningforest', name:'晨林', mix:{ forest:60, birds:48, breeze:30 } },
-    { id:'seaside',       name:'海边', mix:{ ocean:72, breeze:32, birds:18 } },
-    { id:'fireside',      name:'炉边', mix:{ fire:70, wind:24, lrain:24 } },
-    { id:'traincabin',    name:'车厢', mix:{ train:60, hrain:30, hum:22 } },
-    { id:'deepspace',     name:'深空', mix:{ brown:60, hum:34 } },
+    { id:'rainynight',    name:'雨夜', fm:88.1,  mix:{ hrain:62, storm:34, wind:22 } },
+    { id:'morningforest', name:'晨林', fm:90.4,  mix:{ forest:60, birds:48, breeze:30 } },
+    { id:'seaside',       name:'海边', fm:92.9,  mix:{ ocean:72, breeze:32, birds:18 } },
+    { id:'fireside',      name:'炉边', fm:95.6,  mix:{ fire:70, wind:24, lrain:24 } },
+    { id:'traincabin',    name:'车厢', fm:98.3,  mix:{ train:60, hrain:30, hum:22 } },
+    { id:'deepspace',     name:'深空', fm:100.9, mix:{ brown:60, hum:34 } },
   ];
   function customPresets(){ try{ return JSON.parse(localStorage.getItem('lull.presets')||'[]'); }catch(e){ return []; } }
   function saveCustomPresets(a){ localStorage.setItem('lull.presets', JSON.stringify(a)); }
-  function renderPresets(){
-    const box=$('pchips'); box.innerHTML='';
-    const add=(p, custom)=>{
-      const b=document.createElement('button'); b.className='pchip'+(custom?' custom':''); b.textContent=p.name; b.title='切到「'+p.name+'」';
-      b.addEventListener('click', ()=>{ loadMix(p.mix, true); toast('已切到「'+p.name+'」'); });
-      if (custom){ const x=document.createElement('span'); x.className='del'; x.setAttribute('role','button'); x.setAttribute('aria-label','删除预设 '+p.name); x.textContent='×';
-        x.addEventListener('click', e=>{ e.stopPropagation(); saveCustomPresets(customPresets().filter(q=>q.id!==p.id)); renderPresets(); }); b.appendChild(x); }
+  // ---------- 调频拨盘（电台）----------
+  const FMIN=87.5, FMAX=108.0, SNAP=0.6;
+  let curFm=88.1, dragging=false;
+  function defaultCustomFm(cs, i){ const lo=102.0, hi=107.5; return cs.length<=1 ? 104.6 : +(lo+(hi-lo)*i/(cs.length-1)).toFixed(1); }
+  function stations(){
+    const cs=customPresets();
+    const cfm=cs.map((p,i)=>({ ...p, custom:true, fm: (typeof p.fm==='number') ? p.fm : defaultCustomFm(cs,i) }));
+    return BUILTIN_PRESETS.map(p=>({ ...p, custom:false })).concat(cfm);
+  }
+  function setCustomFm(id, fm){ saveCustomPresets(customPresets().map(p=> p.id===id ? { ...p, fm:+(+fm).toFixed(1) } : p)); }
+  const fmToPct = fm => (fm-FMIN)/(FMAX-FMIN)*100;
+  const pctToFm = pct => FMIN + (pct/100)*(FMAX-FMIN);
+  function nearestStation(fm){ let best=null, bd=1e9; stations().forEach(s=>{ const d=Math.abs(s.fm-fm); if (d<bd){ bd=d; best=s; } }); return { s:best, d:bd }; }
+  function currentSig(){ return [...layers.keys()].sort().join(','); }
+  function matchStation(){ const sig=currentSig(); if (!sig) return null; return stations().find(s=> Object.keys(s.mix).sort().join(',')===sig ) || null; }
+
+  // 调台白噪嘶声：独立于 master（静默也可听），随总音量缩放；靠近频道时压低
+  let tuneNoise=null;
+  function ensureTuneNoise(){
+    if (tuneNoise || !ctx) return;
+    const src=ctx.createBufferSource(); src.buffer=buffers.white; src.loop=true;
+    const hp=ctx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=1400;
+    const lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=7200;
+    const g=ctx.createGain(); g.gain.value=0.0001;
+    src.connect(hp); hp.connect(lp); lp.connect(g); g.connect(ctx.destination);
+    src.start(); tuneNoise={ g };
+  }
+  function tuneNoiseLevel(v){
+    if (!tuneNoise || !ctx) return;
+    const now=ctx.currentTime, target=Math.max(0.0001, v*0.05*(0.35+0.65*masterVol/100));
+    tuneNoise.g.gain.cancelScheduledValues(now);
+    tuneNoise.g.gain.setValueAtTime(Math.max(tuneNoise.g.gain.value,0.0001), now);
+    tuneNoise.g.gain.linearRampToValueAtTime(target, now+0.09);
+  }
+
+  function renderScale(){
+    const sc=$('dial-scale'); sc.innerHTML='';
+    for (let f=Math.ceil(FMIN*2)/2; f<=FMAX+0.001; f+=0.5){
+      const major=Math.abs(f-Math.round(f))<0.01;
+      const t=document.createElement('span'); t.className='tick'+(major?' major':''); t.style.left=fmToPct(f)+'%'; sc.appendChild(t);
+      if (major && Math.round(f)%2===0){ const n=document.createElement('span'); n.className='tnum'; n.style.left=fmToPct(f)+'%'; n.textContent=Math.round(f); sc.appendChild(n); }
+    }
+  }
+  function renderDial(){
+    const box=$('dial-stations'); box.innerHTML='';
+    stations().forEach(s=>{
+      const b=document.createElement('button'); b.className='stn'+(s.custom?' custom':''); b.style.left=fmToPct(s.fm)+'%';
+      b.textContent=s.name; b.dataset.id=s.id; b.title=s.name+' · '+s.fm.toFixed(1)+(s.custom?' MHz · 可拖动改频率':' MHz');
+      if (s.custom) wireStationDrag(b, s);
+      else b.addEventListener('click', e=>{ e.stopPropagation(); tuneTo(s, true); toast('已调到「'+s.name+'」· '+s.fm.toFixed(1)); });
       box.appendChild(b);
-    };
-    BUILTIN_PRESETS.forEach(p=>add(p,false));
-    customPresets().forEach(p=>add(p,true));
+    });
+    reflectTuner();
+  }
+  function wireStationDrag(b, s){
+    let sd=null;
+    b.addEventListener('pointerdown', e=>{ e.stopPropagation(); e.preventDefault(); try{ b.setPointerCapture(e.pointerId); }catch(_){} sd={ startX:e.clientX, moved:false, fm:s.fm }; b.classList.add('dragging'); });
+    b.addEventListener('pointermove', e=>{
+      if (!sd) return;
+      if (Math.abs(e.clientX-sd.startX)>4) sd.moved=true;
+      if (!sd.moved) return;
+      const r=$('dial-inner').getBoundingClientRect(), x=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));
+      const fm=Math.max(FMIN+0.4, Math.min(FMAX-0.4, pctToFm(x*100)));
+      sd.fm=fm; b.style.left=fmToPct(fm)+'%'; b.title=s.name+' · '+fm.toFixed(1)+' MHz · 可拖动改频率';
+      if (b.classList.contains('lit')) setNeedle(fm, false);
+    });
+    const end=()=>{ if (!sd) return; const { moved, fm }=sd; sd=null; b.classList.remove('dragging');
+      if (moved){ setCustomFm(s.id, fm); renderDial(); toast('「'+s.name+'」移到 '+fm.toFixed(1)); }
+      else { tuneTo(s, true); toast('已调到「'+s.name+'」· '+s.fm.toFixed(1)); } };
+    b.addEventListener('pointerup', end);
+    b.addEventListener('pointercancel', ()=>{ if (sd){ sd=null; b.classList.remove('dragging'); renderDial(); } });
+  }
+  function setNeedle(fm, animate){
+    curFm=fm; const dial=$('dial'); dial.classList.toggle('anim', !!animate);
+    $('needle').style.left=fmToPct(fm)+'%';
+    $('freq').textContent=fm.toFixed(1);
+    dial.setAttribute('aria-valuenow', fm.toFixed(1));
+  }
+  function tuneTo(s, animate){
+    if (!s) return;
+    setNeedle(s.fm, animate);
+    $('station-now').textContent=s.name; $('dial').setAttribute('aria-valuetext', s.name);
+    document.body.classList.remove('tuning');
+    document.querySelectorAll('#dial-stations .stn').forEach(b=> b.classList.remove('near'));
+    loadMix(s.mix, true);            // loadMix 末尾会调用 reflectTuner()
+  }
+  function reflectTuner(){
+    const dial=$('dial'), m=matchStation();
+    document.querySelectorAll('#dial-stations .stn').forEach(b=> b.classList.toggle('lit', !!m && b.dataset.id===m.id));
+    $('del-station').hidden = !(m && m.custom);
+    if (m){ setNeedle(m.fm, true); $('station-now').textContent=m.name; dial.setAttribute('aria-valuetext', m.name); dial.classList.remove('manual'); }
+    else if (layers.size===0){ setNeedle(FMIN, true); $('freq').textContent='— —'; $('station-now').textContent='静默 · 未调频'; dial.setAttribute('aria-valuetext','未调频'); dial.classList.remove('manual'); }
+    else { $('station-now').textContent='手动调音'; dial.setAttribute('aria-valuetext','手动调音'); dial.classList.add('manual'); }
+  }
+  function delActiveStation(){
+    const m=matchStation(); if (!m || !m.custom) return;
+    saveCustomPresets(customPresets().filter(q=>q.id!==m.id)); renderDial(); toast('已移除频道「'+m.name+'」');
+  }
+
+  function dialPointerFm(e){ const r=$('dial-inner').getBoundingClientRect(); const x=(e.clientX-r.left)/r.width; return pctToFm(Math.max(0,Math.min(1,x))*100); }
+  function dialDrag(e){
+    const fm=dialPointerFm(e); setNeedle(fm, false);
+    const { s, d }=nearestStation(fm), near = s && d<SNAP;
+    $('station-now').textContent = near ? ('» '+s.name) : ('调频中 · '+fm.toFixed(1));
+    document.querySelectorAll('#dial-stations .stn').forEach(b=> b.classList.toggle('near', near && b.dataset.id===s.id));
+    tuneNoiseLevel(Math.max(0.1, Math.min(1, d/SNAP)));   // 越靠近频道 → 嘶声越低
+  }
+  function dialStepStation(dir){
+    const list=stations(); if (!list.length) return;
+    let idx=list.findIndex(s=> Math.abs(s.fm-curFm)<0.35);
+    if (idx<0) idx = dir>0 ? -1 : list.length;
+    idx=Math.max(0, Math.min(list.length-1, idx+dir));
+    tuneTo(list[idx], true);
+  }
+  function initTuner(){
+    const dial=$('dial');
+    dial.addEventListener('pointerdown', e=>{ if (e.target.closest('.stn')) return; dragging=true; try{ dial.setPointerCapture(e.pointerId); }catch(_){} ensureCtx(); if (ctx.state==='suspended') ctx.resume(); ensureTuneNoise(); document.body.classList.add('tuning'); dial.classList.remove('anim'); dialDrag(e); });
+    dial.addEventListener('pointermove', e=>{ if (dragging) dialDrag(e); });
+    const endDrag=()=>{ if (!dragging) return; dragging=false; document.body.classList.remove('tuning'); tuneNoiseLevel(0); const { s }=nearestStation(curFm); if (s) tuneTo(s, true); };
+    dial.addEventListener('pointerup', endDrag);
+    dial.addEventListener('pointercancel', ()=>{ dragging=false; document.body.classList.remove('tuning'); tuneNoiseLevel(0); reflectTuner(); });
+    dial.addEventListener('keydown', e=>{
+      if (e.key==='ArrowRight'||e.key==='ArrowUp'){ dialStepStation(1); e.preventDefault(); }
+      else if (e.key==='ArrowLeft'||e.key==='ArrowDown'){ dialStepStation(-1); e.preventDefault(); }
+      else if (e.key==='Home'){ const l=stations(); if (l[0]) tuneTo(l[0], true); e.preventDefault(); }
+      else if (e.key==='End'){ const l=stations(); if (l.length) tuneTo(l[l.length-1], true); e.preventDefault(); }
+    });
+    $('del-station').addEventListener('click', delActiveStation);
+    renderScale(); renderDial();
   }
   function saveCurrentAsPreset(){
     const mix=currentMix(); if (!Object.keys(mix).length){ toast('先挑一些声音'); return; }
-    const arr=customPresets(); if (arr.length>=12){ toast('自定义预设已满（上限 12）'); return; }
-    const def='预设 '+(arr.length+1); let name=def;
-    try{ const r=prompt('给这个混音起个名字', def); if (r===null) return; name=(r||def).trim().slice(0,16)||def; }catch(e){}
-    arr.push({ id:'c'+Date.now(), name, mix }); saveCustomPresets(arr); renderPresets(); toast('已存为「'+name+'」');
+    const arr=customPresets(); if (arr.length>=8){ toast('自定义频道已满（上限 8）'); return; }
+    const def='频道 '+(arr.length+1); let name=def;
+    try{ const r=prompt('给这个频道起个名字', def); if (r===null) return; name=(r||def).trim().slice(0,10)||def; }catch(e){}
+    const nfm=+Math.min(107.5, 102.4 + arr.length*1.2).toFixed(1);
+    arr.push({ id:'c'+Date.now(), name, mix, fm:nfm }); saveCustomPresets(arr); renderDial(); toast('已存为频道「'+name+'」· '+nfm.toFixed(1)+' · 可拖动改位');
   }
 
   // ---------- 锁屏存活：Media Session + 保活（F-2）----------
@@ -720,12 +889,13 @@
     keepAlive(masterPlaying);
     try{
       navigator.mediaSession.playbackState = masterPlaying?'playing':'paused';
-      const ids=[...layers.keys()];
-      const title = ids.length===0 ? 'Lull · 声音气象台'
+      const ids=[...layers.keys()], st=matchStation();
+      const title = ids.length===0 ? 'Lull · 声音电台'
+                  : st ? (st.name+' · '+stationLine(st))
                   : ids.length===1 ? (POEMS[ids[0]]||byId(ids[0]).name)
                   : ids.map(i=>byId(i).name).join(' · ');
       navigator.mediaSession.metadata = new MediaMetadata({
-        title, artist:'Lull · 声音气象台', album:'Atmospheres',
+        title, artist:'Lull · 声音电台', album:'Atmospheres',
         artwork:[{src:'icons/icon-192.png',sizes:'192x192',type:'image/png'},{src:'icons/icon-512.png',sizes:'512x512',type:'image/png'}]
       });
     }catch(e){}
@@ -748,10 +918,13 @@
       : '<path d="M8 5.5v13a1 1 0 0 0 1.5.87l11-6.5a1 1 0 0 0 0-1.74l-11-6.5A1 1 0 0 0 8 5.5Z"/>';
   }
   const POEMS = { 'storm':'雷雨将至','hrain':'雨落如帘','lrain':'檐下细雨','ocean':'潮汐往复','forest':'林间有风','birds':'晨鸟啁啾','fall':'水声轰鸣','stream':'溪流潺潺','wind':'风过旷野','breeze':'微风拂面','white':'一片纯净','pink':'柔和绵长','brown':'低沉温厚','fan':'室内静谧','ac':'凉夜微鸣','hum':'低鸣入眠','fire':'篝火噼啪','cafe':'咖啡馆微响','train':'夜行列车','bowl':'钵音绵长' };
+  function stationLine(st){ let best=null, bv=-1; Object.keys(st.mix).forEach(id=>{ if (st.mix[id]>bv){ bv=st.mix[id]; best=id; } }); return (best && POEMS[best]) || st.name; }
   function reflectState(){
     const n = layers.size, ids = [...layers.keys()];
     $('now').innerHTML = n===0 ? '静默' : (masterPlaying?'PLAYING · ':'PAUSED · ') + '<b>'+n+'</b> 层';
     if (n===0){ $('mixline').textContent = '挑选声音，编织今晚的氛围'; return; }
+    const st = matchStation();
+    if (st){ $('mixline').textContent = stationLine(st); return; }
     if (n===1){ $('mixline').textContent = POEMS[ids[0]] || byId(ids[0]).name; return; }
     $('mixline').textContent = ids.map(i=>byId(i).name).join(' · ');
   }
@@ -1041,7 +1214,7 @@
   });
   window.addEventListener('pageshow', () => { if (ctx && masterPlaying && ctx.state==='suspended') ctx.resume(); });
 
-  setMasterVol(masterVol); renderTabs(); renderChips(); renderMixer(); renderPresets(); reflectPlay(); reflectState();
+  setMasterVol(masterVol); renderTabs(); renderChips(); renderMixer(); initTuner(); reflectPlay(); reflectState();
   initRestore();
 
   // PWA：仅 http(s) 下注册 Service Worker（file:// 直开无需，见 README）
