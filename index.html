@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Lull · 声音气象台</title>
-<meta name="description" content="Lull · 声音气象台 — 白噪音混音 + 生成式场景，助眠与专注。" />
+<title>Lull · 声音电台 · Night FM</title>
+<meta name="description" content="Lull · 声音电台 — 拧动调频拨盘在夜间频道间穿梭，混音驱动生成式气象，助眠与专注。" />
 <meta name="theme-color" content="#0b1418" media="(prefers-color-scheme: dark)" />
 <meta name="theme-color" content="#eef3ee" media="(prefers-color-scheme: light)" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -76,6 +76,7 @@
   }
 
   header { display: flex; align-items: flex-start; justify-content: space-between; }
+  .head-actions { display: flex; gap: 8px; flex: none; }
   .wordmark { font-family: var(--serif); font-size: 26px; font-weight: 500; letter-spacing: .01em; line-height: 1; }
   .tagline { font-family: var(--mono); font-size: 10.5px; letter-spacing: .22em; color: var(--ink-faint); text-transform: uppercase; margin-top: 7px; }
   .icon-btn {
@@ -89,7 +90,8 @@
 
   /* 中央：床头时钟 + 混音诗行 */
   .hero { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 14px; padding: 10px 0 20px; }
-  .clock { font-family: var(--serif); font-weight: 400; font-size: clamp(56px, 17vw, 116px); line-height: .92; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+  .clock { font-family: var(--serif); font-weight: 400; font-size: clamp(56px, 17vw, 116px); line-height: .92; letter-spacing: -.01em; font-variant-numeric: tabular-nums; cursor: pointer; transition: font-size .6s cubic-bezier(.22,.61,.36,1), transform 1.6s ease; }
+  .clock:focus-visible { outline: 2px solid var(--aurora); outline-offset: 6px; }
   .clock .sec { color: var(--ink-faint); font-size: .34em; vertical-align: middle; margin-left: .18em; }
   .datemeta { font-family: var(--mono); font-size: 11px; letter-spacing: .2em; color: var(--ink-faint); text-transform: uppercase; }
   .mixline { font-family: var(--serif); font-style: italic; font-size: clamp(15px, 4.4vw, 19px); color: var(--ink-dim); min-height: 1.4em; text-wrap: balance; max-width: 24em; }
@@ -172,6 +174,21 @@
   :root[data-theme="light"] .cell[aria-pressed="true"] { color: #0c1413; }
   .cell[aria-pressed="true"] .dot { opacity: 1; background: rgba(10,20,18,.55); }
 
+  /* 细分子选择器（鸟种/虫种/篝火性格/咖啡细节/雨的质地，复用 .bird-* 类名） */
+  .bird-picker { flex: 0 0 100%; width: 100%; margin-top: 4px; padding: 11px 12px; border-radius: 13px;
+    border: 1px solid var(--line); background: var(--glass-2); display: flex; flex-direction: column; gap: 9px; }
+  .bird-picker-head { font-family: var(--serif); font-style: italic; font-size: 12.5px; color: var(--ink-faint); display: flex; align-items: center; gap: 8px; }
+  .bird-picker-head .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; opacity: .7; }
+  .bird-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+  .bird-chip { appearance: none; cursor: pointer; font-family: var(--sans); font-size: 12.5px; padding: 6px 12px; border-radius: 11px;
+    border: 1px solid var(--line-strong); background: transparent; color: var(--ink-dim); display: inline-flex; align-items: center; gap: 6px;
+    transition: color .15s, border-color .15s, background .15s, transform .08s; }
+  .bird-chip .bd { width: 6px; height: 6px; border-radius: 50%; background: #ffd48a; opacity: .5; transition: opacity .18s; }
+  .bird-chip:hover { color: var(--ink); border-color: #ffd48a; }
+  .bird-chip:active { transform: scale(.94); }
+  .bird-chip[aria-pressed="true"] { color: #0c1413; background: #ffd48a; border-color: transparent; font-weight: 600; }
+  .bird-chip[aria-pressed="true"] .bd { opacity: 1; background: rgba(10,20,18,.55); }
+
   .timerbar { display: flex; align-items: center; gap: 10px; }
   .timerbar .eyebrow { flex: none; }
   .tchips { display: flex; gap: 5px; flex-wrap: wrap; }
@@ -246,6 +263,20 @@
   body.tuning .static-vh { opacity: .45; animation: staticShift .18s steps(2) infinite; }
   @keyframes staticShift { from { background-position: 0 0, 0 0; } to { background-position: 10px -7px, 0 0; } }
 
+  /* 入睡调光遮罩（F-9）：定时器启动后数分钟渐降至约 30% 亮度，声音渐隐的视觉对应物 */
+  .dim-veil { position: fixed; inset: 0; z-index: 2; background: #04070a; opacity: 0; pointer-events: none; }
+  :root[data-theme="light"] .dim-veil { background: #223028; }
+
+  /* 沉浸挂机态（F-9）：播放中 8s 无交互 → 控制台与光标淡出，仅留场景 + 时钟；任意输入 300ms 内恢复 */
+  header, .console, .mixline { transition: opacity 1s ease, transform 1s ease; }
+  body.waking header, body.waking .console, body.waking .mixline { transition: opacity .22s ease, transform .22s ease; }
+  body.immersive { cursor: none; }
+  body.immersive header,
+  body.immersive .console { opacity: 0; transform: translateY(18px); pointer-events: none; }
+  body.immersive .mixline { opacity: 0; }
+  body.immersive .clock { font-size: clamp(84px, 20vmin, 340px); }
+  body.immersive .datemeta { color: var(--ink-faint); opacity: .7; }
+
   :focus-visible { outline: 2px solid var(--aurora); outline-offset: 3px; border-radius: 8px; }
   @media (prefers-reduced-motion: reduce) { *:not(#scene) { animation: none !important; transition: none !important; } }
 </style>
@@ -253,6 +284,7 @@
 <body>
   <canvas id="scene" aria-hidden="true"></canvas>
   <div class="static-vh" id="static" aria-hidden="true"></div>
+  <div class="dim-veil" id="dim-veil" aria-hidden="true"></div>
 
   <div class="app">
     <header>
@@ -260,13 +292,18 @@
         <div class="wordmark">Lull</div>
         <div class="tagline">声音电台 · Night FM</div>
       </div>
-      <button class="icon-btn" id="theme" aria-label="切换深浅主题" title="切换主题">
-        <svg id="theme-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></svg>
-      </button>
+      <div class="head-actions">
+        <button class="icon-btn" id="fullscreen" aria-label="全屏（F）" title="全屏 · F">
+          <svg id="fs-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V5a1 1 0 0 1 1-1h4M20 9V5a1 1 0 0 0-1-1h-4M4 15v4a1 1 0 0 0 1 1h4M20 15v4a1 1 0 0 1-1 1h-4"/></svg>
+        </button>
+        <button class="icon-btn" id="theme" aria-label="切换深浅主题" title="切换主题">
+          <svg id="theme-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></svg>
+        </button>
+      </div>
     </header>
 
     <div class="hero">
-      <div class="clock" id="clock" aria-label="当前时间">--:--</div>
+      <div class="clock" id="clock" role="button" tabindex="0" aria-label="当前时间 · 点击切换秒针显示" title="点击切换秒针">--:--</div>
       <div class="datemeta" id="datemeta"></div>
       <div class="mixline" id="mixline">挑选声音，编织今晚的氛围</div>
     </div>
@@ -356,31 +393,99 @@
     { id:'pink',  name:'粉噪音', cat:'noise', base:'pink',  color:'#ffc9de', paint:'grain' },
     { id:'brown', name:'褐噪音', cat:'noise', base:'brown', color:'#e6b98a', paint:'grain' },
 
-    { id:'lrain', name:'小雨', cat:'rain', base:'white', color:'#9cc2ff', paint:'rain', file:'lrain.mp3', filters:[{type:'highpass',freq:900,q:0.6},{type:'lowpass',freq:6800,q:0.6}] },
-    { id:'hrain', name:'大雨', cat:'rain', base:'white', color:'#7aa4ff', paint:'rain', filters:[{type:'lowpass',freq:4200,q:0.5}] },
-    { id:'storm', name:'雷雨', cat:'rain', base:'white', color:'#6f8cf0', paint:'rain', file:'storm.mp3', thunder:true, filters:[{type:'lowpass',freq:3800,q:0.5}] },
+    { id:'lrain', name:'小雨', cat:'rain', base:'white', color:'#9cc2ff', paint:'rain', surface:true, filters:[{type:'highpass',freq:900,q:0.6},{type:'lowpass',freq:6800,q:0.6}] },
+    { id:'hrain', name:'大雨', cat:'rain', base:'white', color:'#7aa4ff', paint:'rain', surface:true, filters:[{type:'lowpass',freq:4200,q:0.5}] },
+    { id:'storm', name:'雷雨', cat:'rain', base:'white', color:'#6f8cf0', paint:'rain', surface:true, thunder:true, filters:[{type:'lowpass',freq:3800,q:0.5}] },
 
     { id:'ocean',  name:'海浪', cat:'water', base:'brown', color:'#5fd0c0', paint:'ocean', filters:[{type:'lowpass',freq:520,q:0.6}], lfo:{rate:0.09,depth:0.36,target:'gain'} },
     { id:'stream', name:'溪流', cat:'water', base:'pink',  color:'#7fd8e6', paint:'mist',  filters:[{type:'bandpass',freq:2300,q:1.1}], lfo:{rate:4.5,depth:600,target:'freq'}, reverb:0.25 },
-    { id:'fall',   name:'瀑布', cat:'water', base:'white', color:'#a8e0ff', paint:'mist',  file:'fall.mp3', filters:[{type:'lowpass',freq:3200,q:0.4}] },
+    { id:'fall',   name:'瀑布', cat:'water', base:'white', color:'#a8e0ff', paint:'mist',  filters:[{type:'lowpass',freq:3200,q:0.4}] },
 
     { id:'forest', name:'森林', cat:'forest', base:'pink',  color:'#7fd08a', paint:'forest', file:'forest.mp3', filters:[{type:'bandpass',freq:2100,q:0.8}], lfo:{rate:0.15,depth:700,target:'freq'}, birds:'low',  reverb:0.4 },
-    { id:'birds',  name:'鸟鸣', cat:'forest', base:null,    color:'#ffd48a', paint:'birds',  file:'birds.mp3', birds:'high', reverb:0.5 },
+    { id:'birds',  name:'鸟鸣', cat:'forest', base:null,    color:'#ffd48a', paint:'birds',  birds:'high', reverb:0.5 },
+    { id:'insects',name:'虫鸣', cat:'forest', base:null,    color:'#c3e08a', paint:'bokeh',  insects:true, reverb:0.35 },
 
     { id:'breeze', name:'微风', cat:'wind', base:'pink', color:'#bfe6cf', paint:'wind', filters:[{type:'lowpass',freq:520,q:0.5}], lfo:{rate:0.06,depth:300,target:'freq'} },
-    { id:'wind',   name:'大风', cat:'wind', base:'pink', color:'#9fd0b8', paint:'wind', file:'wind.mp3', filters:[{type:'lowpass',freq:840,q:0.6}], lfo:{rate:0.13,depth:520,target:'freq'} },
+    { id:'wind',   name:'大风', cat:'wind', base:'pink', color:'#9fd0b8', paint:'wind', filters:[{type:'lowpass',freq:840,q:0.6}], lfo:{rate:0.13,depth:520,target:'freq'} },
+    { id:'snow',   name:'落雪', cat:'wind', base:'pink', color:'#dbe7ff', paint:'snow', filters:[{type:'lowpass',freq:1100,q:0.5}], lfo:{rate:0.05,depth:260,target:'freq'} },
 
     { id:'fan', name:'风扇', cat:'room', base:'brown', color:'#c2ccd8', paint:'haze', filters:[{type:'lowpass',freq:240,q:0.7}] },
     { id:'ac',  name:'空调', cat:'room', base:'brown', color:'#b6c4d0', paint:'haze', filters:[{type:'lowpass',freq:170,q:0.7}], tone:{freq:120,type:'sine',gain:0.05} },
     { id:'train', name:'火车', cat:'room', base:'brown', color:'#b9c4cf', paint:'rail', file:'train.mp3', filters:[{type:'lowpass',freq:160,q:0.7}], clack:true },
+    { id:'subway', name:'地铁', cat:'room', base:'brown', color:'#9fb0c0', paint:'rail', filters:[{type:'lowpass',freq:260,q:0.7}], lfo:{rate:0.2,depth:400,target:'freq'}, clack:true },
+    { id:'pages',  name:'翻书', cat:'room', base:null,    color:'#e8dcc0', paint:'mist', pages:true, reverb:0.2 },
+    { id:'tick',   name:'滴答', cat:'room', base:null,    color:'#c9d2dc', paint:'ripple', tick:true },
 
     { id:'fire', name:'篝火',   cat:'warm', base:'brown', color:'#ff9a5a', paint:'fire',  filters:[{type:'lowpass',freq:380,q:0.7}], lfo:{rate:0.5,depth:120,target:'freq'}, crackle:true, reverb:0.15 },
     { id:'cafe', name:'咖啡馆', cat:'warm', base:'pink',  color:'#ffc59a', paint:'bokeh', file:'cafe.mp3', filters:[{type:'bandpass',freq:750,q:0.9}], lfo:{rate:0.4,depth:0.4,target:'gain'}, clink:true, reverb:0.3 },
+    { id:'purr', name:'猫呼噜', cat:'warm', base:'brown', color:'#f0b58a', paint:'haze', filters:[{type:'lowpass',freq:220,q:0.8}], lfo:{rate:26,depth:0.55,target:'gain'} },
 
     { id:'bowl', name:'颂钵', cat:'calm', base:null,    color:'#e6d3a0', paint:'ripple', bowl:{freq:236}, reverb:0.6 },
     { id:'hum',  name:'低鸣', cat:'calm', base:'brown', color:'#a9bccb', paint:'haze',   filters:[{type:'lowpass',freq:110,q:0.8}] },
   ];
   const byId = id => SOUNDS.find(s => s.id === id);
+
+  // ---------- 细分「子选择器」：某个声音再拆成可勾选的成员（合成，纯本地）----------
+  // 鸟种（森林 · 鸟鸣，多选合唱）
+  const BIRD_SPECIES = [
+    { id:'sparrow',     name:'麻雀', desc:'清脆短啾 · 晨间活泼' },
+    { id:'thrush',      name:'画眉', desc:'婉转多音 · 旋律流转' },
+    { id:'dove',        name:'斑鸠', desc:'低沉咕咕 · 安神' },
+    { id:'cuckoo',      name:'杜鹃', desc:'布谷两声 · 悠远' },
+    { id:'nightingale', name:'夜莺', desc:'华丽颤鸣 · 夜之歌手' },
+  ];
+  const FOREST_BIRDS = ['sparrow', 'thrush', 'dove'];   // 「森林」底噪里随机点缀的鸟
+  // 虫种（森林 · 虫鸣，多选合唱）
+  const INSECT_SPECIES = [
+    { id:'cricket', name:'蟋蟀',   desc:'高频颤鸣 · 秋夜' },
+    { id:'cicada',  name:'蝉',     desc:'绵长鼓噪 · 盛夏' },
+    { id:'frog',    name:'蛙',     desc:'低沉蛙鸣 · 塘边' },
+    { id:'katydid', name:'纺织娘', desc:'沙沙织声 · 草丛' },
+  ];
+  // 篝火爆裂性格（暖 · 篝火，多选）
+  const FIRE_CHARS = [
+    { id:'snap',     name:'噼啪', desc:'清脆爆响' },
+    { id:'burst',    name:'爆裂', desc:'成串迸溅' },
+    { id:'collapse', name:'塌陷', desc:'木柴翻落' },
+    { id:'ember',    name:'余烬', desc:'细碎嘶嘶' },
+  ];
+  // 咖啡馆环境细节（暖 · 咖啡馆，多选，可全关只留底噪录音）
+  const CAFE_EVENTS = [
+    { id:'clink',   name:'碰杯', desc:'瓷器轻碰' },
+    { id:'grinder', name:'磨豆', desc:'研磨咖啡豆' },
+    { id:'steam',   name:'咖啡机', desc:'蒸汽嘶响' },
+    { id:'spoon',   name:'汤匙', desc:'搅拌叮当' },
+  ];
+  // 雨的质地：打在什么上（雨 · 单选，所有雨层通用）
+  const RAIN_SURFACES = [
+    { id:'eaves',  name:'屋檐',   desc:'低沉滴落 · 屋檐下', type:'lowpass',  freq:2600, q:0.8 },
+    { id:'glass',  name:'窗玻璃', desc:'清脆点击 · 打在窗上', type:'highpass', freq:1800, q:0.7 },
+    { id:'leaves', name:'树叶',   desc:'柔和沙沙 · 落在叶间', type:'bandpass', freq:2200, q:0.6 },
+    { id:'water',  name:'水面',   desc:'饱满深沉 · 落在水上', type:'lowpass',  freq:1400, q:1.0 },
+  ];
+  const RAIN_SURFACE_BY_ID = Object.fromEntries(RAIN_SURFACES.map(s => [s.id, s]));
+
+  // 声明式：每个子选择器挂在某个分类下，可绑定某个声音（选中即开）
+  const VARIANT_PICKERS = [
+    { cat:'rain',   sound:'__rain', autoEnable:false, key:'lull.rainsurf', mode:'single', label:'雨 · 打在什么上（所有雨通用）', dot:'#9cc2ff', members:RAIN_SURFACES, default:'leaves', onSelect:()=>applyRainSurface() },
+    { cat:'forest', sound:'birds',   key:'lull.birds',   mode:'multi', min:1, label:'鸟鸣 · 选择鸟种（可多选）',   dot:'#ffd48a', members:BIRD_SPECIES,   default:['sparrow','thrush'] },
+    { cat:'forest', sound:'insects', key:'lull.insects', mode:'multi', min:1, label:'虫鸣 · 选择虫种（可多选）',   dot:'#c3e08a', members:INSECT_SPECIES, default:['cricket','frog'] },
+    { cat:'warm',   sound:'fire',    key:'lull.fire',    mode:'multi', min:1, label:'篝火 · 爆裂性格（可多选）',   dot:'#ff9a5a', members:FIRE_CHARS,     default:['snap','collapse'] },
+    { cat:'warm',   sound:'cafe',    key:'lull.cafe',    mode:'multi', min:0, label:'咖啡馆 · 环境细节（可全关）', dot:'#ffc59a', members:CAFE_EVENTS,    default:['clink','grinder'] },
+  ];
+  function pickerById(id){ return VARIANT_PICKERS.find(p => p.sound === id); }
+  function variantGet(p){
+    try{ const a = JSON.parse(localStorage.getItem(p.key) || 'null');
+      if (p.mode==='single'){ if (typeof a==='string' && p.members.some(m=>m.id===a)) return a; }
+      else if (Array.isArray(a)){ const f=a.filter(id=>p.members.some(m=>m.id===id)); if (f.length >= (p.min||0)) return f; }
+    }catch(e){}
+    return p.mode==='single' ? p.default : p.default.slice();
+  }
+  function variantSet(p, val){ localStorage.setItem(p.key, JSON.stringify(val)); }
+  function selForSound(id, fb){ const p=pickerById(id); return p ? variantGet(p) : (fb||[]); }
+  function selectedBirds(){ return selForSound('birds', ['sparrow','thrush']); }   // 鸟鸣 high 密度用户选中的鸟
+  function currentRainSurface(){ const p=VARIANT_PICKERS.find(x=>x.sound==='__rain'); return RAIN_SURFACE_BY_ID[variantGet(p)] || RAIN_SURFACES[2]; }
+  function applyRainSurface(){ if (!ctx) return; const s=currentRainSurface(); layers.forEach((l,id)=>{ const c=byId(id); if (c && c.surface && l.surfaceFilter){ const f=l.surfaceFilter, now=ctx.currentTime; f.type=s.type; f.frequency.setTargetAtTime(s.freq, now, 0.08); f.Q.setTargetAtTime(s.q, now, 0.08); } }); }
 
   // ---------- 音频引擎 ----------
   let ctx=null, master=null, reverb=null, reverbBus=null;
@@ -425,6 +530,11 @@
     ['white','pink','brown'].forEach(t => buffers[t] = makeNoise(t));
     setupKeepAlive();
     setupMediaSession();
+    ctx.onstatechange = () => {
+      // 来电/闹钟/Siri 等中断会把 ctx 置为 interrupted/suspended；仅在「应当播放」时自愈（D7），
+      // 不与 D8 的主动挂起（masterPlaying=false）冲突。
+      if (masterPlaying && ctx.state !== 'running' && ctx.state !== 'closed') attemptRecover();
+    };
   }
 
   // ---- 文件音频缓冲（fetch + decodeAudioData，进入同一 Web Audio 图；失败回退合成）----
@@ -503,6 +613,7 @@
       const src = ctx.createBufferSource(); src.buffer = buffers[cfg.base]; src.loop = true; layer.src = src;
       let node = src;
       (cfg.filters||[]).forEach(f => { const bf=ctx.createBiquadFilter(); bf.type=f.type; bf.frequency.value=f.freq; bf.Q.value=f.q; node.connect(bf); node=bf; layer.filters.push(bf); });
+      if (cfg.surface){ const sf=ctx.createBiquadFilter(); const s=currentRainSurface(); sf.type=s.type; sf.frequency.value=s.freq; sf.Q.value=s.q; node.connect(sf); node=sf; layer.surfaceFilter=sf; layer.extra.push(sf); }   // 雨的质地：可实时改变的末级滤波
       if (cfg.lfo){ const lfo=ctx.createOscillator(); lfo.type='sine'; lfo.frequency.value=cfg.lfo.rate; const lg=ctx.createGain();
         if (cfg.lfo.target==='gain'){ const sw=ctx.createGain(); sw.gain.value=1-cfg.lfo.depth; lg.gain.value=cfg.lfo.depth; lfo.connect(lg); lg.connect(sw.gain); node.connect(sw); node=sw; layer.extra.push(sw); }
         else { lg.gain.value=cfg.lfo.depth; lfo.connect(lg); lg.connect(layer.filters[0].frequency); }
@@ -515,13 +626,16 @@
   }
   function wireSynthEvents(layer, cfg){
     if (cfg.thunder) scheduleThunder(layer);
-    if (cfg.birds) scheduleBirds(layer, cfg.birds);
+    if (cfg.birds) scheduleBirds(layer, cfg.birds, true);
+    if (cfg.insects) scheduleInsects(layer, true);
     if (cfg.crackle) scheduleCrackle(layer);
-    if (cfg.clink) scheduleClink(layer);
+    if (cfg.clink) scheduleCafe(layer);
     if (cfg.clack) scheduleClack(layer);
+    if (cfg.tick) scheduleTock(layer);
+    if (cfg.pages) scheduleRustle(layer);
     if (cfg.bowl) scheduleStrike(layer, cfg.bowl);
   }
-  function stopTimers(layer){ ['thunderTimer','birdTimer','crackleTimer','clinkTimer','clackTimer','strikeTimer','sceneTimer'].forEach(k => { if (layer[k]) clearTimeout(layer[k]); }); }
+  function stopTimers(layer){ ['thunderTimer','birdTimer','insectTimer','crackleTimer','clinkTimer','clackTimer','tickTimer','pageTimer','strikeTimer','sceneTimer'].forEach(k => { if (layer[k]) clearTimeout(layer[k]); }); }
   function teardownLayer(layer){
     [layer.src, layer.lfo, layer.tone].forEach(n => { if (n){ try{ n.stop(); }catch(e){} } });
     if (layer.src) try{ layer.src.disconnect(); }catch(e){}
@@ -546,42 +660,166 @@
     b.start(now); b.stop(now+dur+0.1); b.onended = () => { try{ b.disconnect(); lp.disconnect(); gn.disconnect(); }catch(e){} };
   }
 
-  // 鸟鸣：频率扫掠啁啾
-  function scheduleBirds(layer, density){
-    const gap = density==='high' ? (1.2+rand()*3) : (5+rand()*11);
-    layer.birdTimer = setTimeout(() => { if(!layer.active) return; if(masterPlaying) singPhrase(layer); scheduleBirds(layer, density); }, gap*1000);
+  // 鸟鸣：多鸟种合成。density='high' 时唱用户选中的鸟种；'low'（森林底噪）随机点缀。
+  function scheduleBirds(layer, density, first){
+    const gap = first ? (0.3+rand()*0.6) : (density==='high' ? (1.6+rand()*3.4) : (6+rand()*12));
+    layer.birdTimer = setTimeout(() => {
+      if (!layer.active) return;
+      if (masterPlaying){
+        const pool = density==='high' ? selectedBirds() : FOREST_BIRDS;
+        if (pool.length) singSpecies(pool[Math.floor(rand()*pool.length)], layer);
+      }
+      scheduleBirds(layer, density);
+    }, gap*1000);
   }
-  function singPhrase(layer){
-    const n = 1 + Math.floor(rand()*4), baseF = 1900 + rand()*2300;
-    let when = ctx.currentTime + 0.02;
-    for (let i=0;i<n;i++){ chirp(layer, when, baseF*(0.9+rand()*0.28)); when += 0.08 + rand()*0.10; }
-    scene.spark(layer.cfg.color);
-  }
-  function chirp(layer, when, f){
-    const o = ctx.createOscillator(); o.type='triangle'; const g=ctx.createGain();
-    const dur = 0.07 + rand()*0.09;
-    o.frequency.setValueAtTime(f*0.8, when);
-    o.frequency.linearRampToValueAtTime(f*1.28, when+dur*0.4);
-    o.frequency.linearRampToValueAtTime(f*0.92, when+dur);
-    g.gain.setValueAtTime(0.0001, when); g.gain.linearRampToValueAtTime(0.26, when+0.012); g.gain.exponentialRampToValueAtTime(0.0006, when+dur);
-    o.connect(g); g.connect(layer.gain);
-    o.start(when); o.stop(when+dur+0.05); o.onended = () => { try{ o.disconnect(); g.disconnect(); }catch(e){} };
+  function singSpecies(id, layer){ const fn=BIRD_PHRASES[id]; if (!fn || !ctx) return; fn(layer, ctx.currentTime+0.02); scene.spark(layer.cfg.color); }
+
+  // 单个音节：正弦载波 + 频率轮廓（起→峰→落）+ 可选二次谐波/颤音/起音噪门
+  function birdNote(layer, when, o){
+    const dur=o.dur, f0=o.f0, f1=(o.f1!=null?o.f1:f0), f2=(o.f2!=null?o.f2:f1);
+    const g=ctx.createGain(); g.connect(layer.gain);
+    const osc=ctx.createOscillator(); osc.type=o.wave||'sine';
+    osc.frequency.setValueAtTime(f0, when);
+    osc.frequency.linearRampToValueAtTime(f1, when+dur*0.35);
+    osc.frequency.linearRampToValueAtTime(f2, when+dur);
+    osc.connect(g);
+    let vibOsc=null, vibGain=null, h=null, hg=null;
+    if (o.vib){ vibOsc=ctx.createOscillator(); vibOsc.frequency.value=o.vibRate||20; vibGain=ctx.createGain(); vibGain.gain.value=o.vib; vibOsc.connect(vibGain); vibGain.connect(osc.frequency); vibOsc.start(when); vibOsc.stop(when+dur+0.03); }
+    if (o.harm){ h=ctx.createOscillator(); h.type='sine'; h.frequency.setValueAtTime(f0*2,when); h.frequency.linearRampToValueAtTime(f1*2,when+dur*0.35); h.frequency.linearRampToValueAtTime(f2*2,when+dur); hg=ctx.createGain(); hg.gain.value=o.harm; h.connect(hg); hg.connect(g); h.start(when); h.stop(when+dur+0.03); }
+    const peak=(o.gain!=null?o.gain:0.2);
+    g.gain.setValueAtTime(0.0001, when);
+    g.gain.linearRampToValueAtTime(peak, when+(o.attack!=null?o.attack:Math.min(0.014,dur*0.3)));
+    g.gain.exponentialRampToValueAtTime(0.0006, when+(o.decay||dur));
+    osc.start(when); osc.stop(when+dur+0.05);
+    if (o.noise){ const nb=ctx.createBufferSource(); nb.buffer=buffers.white; nb.loop=true; const nf=ctx.createBiquadFilter(); nf.type='bandpass'; nf.frequency.value=f1; nf.Q.value=0.9; const ng=ctx.createGain(); ng.gain.setValueAtTime(o.noise,when); ng.gain.exponentialRampToValueAtTime(0.0004,when+0.02); nb.connect(nf); nf.connect(ng); ng.connect(layer.gain); nb.start(when); nb.stop(when+0.06); nb.onended=()=>{try{nb.disconnect();nf.disconnect();ng.disconnect();}catch(e){}}; }
+    osc.onended=()=>{ try{osc.disconnect();g.disconnect();}catch(e){} if(vibOsc){try{vibOsc.disconnect();vibGain.disconnect();}catch(e){}} if(h){try{h.disconnect();hg.disconnect();}catch(e){}} };
   }
 
-  // 篝火：低吼 + 随机噼啪
-  function scheduleCrackle(layer){ layer.crackleTimer = setTimeout(() => { if(!layer.active) return; if(masterPlaying){ const n=1+Math.floor(rand()*3); for(let i=0;i<n;i++) pop(layer, ctx.currentTime + rand()*0.14); } scheduleCrackle(layer); }, 60 + rand()*260); }
-  function pop(layer, when){
+  const BIRD_PHRASES = {
+    // 麻雀：一串清脆短啾，略带噪门
+    sparrow(layer, t){
+      const n=2+Math.floor(rand()*4), f=3400+rand()*1500;
+      for (let i=0;i<n;i++){ birdNote(layer, t, {f0:f*0.97, f1:f*(1.04+rand()*0.08), f2:f*0.95, dur:0.04+rand()*0.03, gain:0.15, noise:0.05, wave:'triangle'}); t+=0.055+rand()*0.06; }
+    },
+    // 画眉：婉转乐句，音节上下起伏、带谐波
+    thrush(layer, t){
+      const n=4+Math.floor(rand()*4); let base=2000+rand()*900;
+      for (let i=0;i<n;i++){ const up=rand()<0.5, a=base*(0.85+rand()*0.35), b=a*(up?1.28:0.78), c=b*(0.88+rand()*0.22);
+        birdNote(layer, t, {f0:a, f1:b, f2:c, dur:0.09+rand()*0.08, gain:0.16, harm:0.06, vib:rand()<0.4?26:0, vibRate:24});
+        base*=(0.95+rand()*0.12); t+=0.10+rand()*0.09; }
+    },
+    // 斑鸠：低沉柔和的咕咕，慢起慢落，安神
+    dove(layer, t){
+      const n=3+Math.floor(rand()*2), f=520+rand()*170;
+      for (let i=0;i<n;i++){ const rise=i===0;
+        birdNote(layer, t, {f0:rise?f*0.9:f, f1:f, f2:f*0.96, dur:0.24+rand()*0.12, gain:0.16, harm:0.12, attack:0.05, decay:0.34, wave:'sine'});
+        t+=0.30+rand()*0.14; }
+    },
+    // 杜鹃：经典「布—谷」两声，后接长静默
+    cuckoo(layer, t){
+      const f=980+rand()*200;
+      birdNote(layer, t,      {f0:f,     f1:f,     f2:f*0.99, dur:0.16, gain:0.18, harm:0.09, attack:0.02, wave:'sine'});
+      birdNote(layer, t+0.22, {f0:f*0.8, f1:f*0.8, f2:f*0.78, dur:0.20, gain:0.17, harm:0.09, attack:0.02, wave:'sine'});
+    },
+    // 夜莺：颤音串与长滑哨交替，最华丽
+    nightingale(layer, t){
+      const motifs=1+Math.floor(rand()*2);
+      for (let m=0;m<motifs;m++){
+        if (rand()<0.5){ const k=6+Math.floor(rand()*8), f=2500+rand()*1300;
+          for (let i=0;i<k;i++){ birdNote(layer, t, {f0:f*(i%2?1.14:0.9), f1:f*(i%2?1.22:0.86), dur:0.03+rand()*0.02, gain:0.13}); t+=0.045; }
+          t+=0.08;
+        } else { const a=2100+rand()*400, b=a*(1.3+rand()*0.4), dur=0.3+rand()*0.22;
+          birdNote(layer, t, {f0:a, f1:b, f2:a*1.08, dur, gain:0.15, harm:0.05, vib:38, vibRate:14}); t+=dur+0.1;
+        }
+      }
+    },
+  };
+
+  // 虫鸣：多虫种合成（事件型合唱，跟鸟鸣同构）。用户选中的虫种随机轮唱。
+  function scheduleInsects(layer, first){
+    const gap = first ? (0.4+rand()*0.6) : (1.2+rand()*3.2);
+    layer.insectTimer = setTimeout(() => {
+      if (!layer.active) return;
+      if (masterPlaying){ const pool=selForSound('insects', ['cricket']); if (pool.length){ const id=pool[Math.floor(rand()*pool.length)], fn=INSECT_PHRASES[id]; if (fn && ctx){ fn(layer, ctx.currentTime+0.02); scene.spark(layer.cfg.color); } } }
+      scheduleInsects(layer);
+    }, gap*1000);
+  }
+  // 拟声噪门：一小段带通白噪脉冲（蟋蟀/纺织娘的擦翅声）
+  function chirrNote(layer, when, o){
     const b=ctx.createBufferSource(); b.buffer=buffers.white; b.loop=true;
-    const bp=ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=1200+rand()*2600; bp.Q.value=1.6;
+    const bp=ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=o.freq; bp.Q.value=o.q||6;
     const g=ctx.createGain(); g.gain.value=0; b.connect(bp); bp.connect(g); g.connect(layer.gain);
-    const dur=0.02+rand()*0.05, amp=0.10+rand()*0.32;
+    const dur=o.dur, amp=(o.gain!=null?o.gain:0.1);
+    g.gain.setValueAtTime(0.0001,when); g.gain.linearRampToValueAtTime(amp,when+(o.attack||0.004)); g.gain.exponentialRampToValueAtTime(0.0004,when+dur);
+    b.start(when); b.stop(when+dur+0.02); b.onended=()=>{try{b.disconnect();bp.disconnect();g.disconnect();}catch(e){}};
+  }
+  const INSECT_PHRASES = {
+    // 蟋蟀：一串高频擦翅短颤
+    cricket(layer, t){ const n=6+Math.floor(rand()*10), f=4200+rand()*900; for (let i=0;i<n;i++){ chirrNote(layer, t, {freq:f, q:12, dur:0.02+rand()*0.012, gain:0.10}); t+=0.028+rand()*0.012; } },
+    // 蝉：绵长的调幅鼓噪
+    cicada(layer, t){
+      const f=5000+rand()*1200, dur=0.8+rand()*1.4;
+      const b=ctx.createBufferSource(); b.buffer=buffers.white; b.loop=true;
+      const bp=ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=f; bp.Q.value=7;
+      const g=ctx.createGain(); g.gain.value=0; b.connect(bp); bp.connect(g); g.connect(layer.gain);
+      const lfo=ctx.createOscillator(); lfo.type='sine'; lfo.frequency.value=45+rand()*25; const lg=ctx.createGain(); lg.gain.value=0.045; lfo.connect(lg); lg.connect(g.gain);
+      g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.085,t+0.15); g.gain.setValueAtTime(0.085,t+dur-0.2); g.gain.exponentialRampToValueAtTime(0.0004,t+dur);
+      lfo.start(t); lfo.stop(t+dur+0.02); b.start(t); b.stop(t+dur+0.03);
+      b.onended=()=>{try{b.disconnect();bp.disconnect();g.disconnect();lfo.disconnect();lg.disconnect();}catch(e){}};
+    },
+    // 蛙：低沉带颤的蛙鸣（复用 birdNote 的音节引擎，锯齿波 + 快颤音）
+    frog(layer, t){ const n=1+Math.floor(rand()*3), f=190+rand()*140; for (let i=0;i<n;i++){ birdNote(layer, t, {f0:f*0.9, f1:f, f2:f*0.85, dur:0.14+rand()*0.1, gain:0.16, harm:0.18, vib:8, vibRate:32, wave:'sawtooth', attack:0.02}); t+=0.22+rand()*0.18; } },
+    // 纺织娘：成组的沙沙擦声
+    katydid(layer, t){ const reps=2+Math.floor(rand()*3); for (let r=0;r<reps;r++){ const f=5800+rand()*1400; for (let i=0;i<3;i++){ chirrNote(layer, t, {freq:f, q:5, dur:0.05, gain:0.09}); t+=0.06; } t+=0.14+rand()*0.1; } },
+  };
+
+  // 篝火：低吼 + 随机噼啪
+  function scheduleCrackle(layer){ layer.crackleTimer = setTimeout(() => { if(!layer.active) return; if(masterPlaying){ const chars=selForSound('fire', ['snap']); if (chars.length) firePop(layer, chars[Math.floor(rand()*chars.length)]); } scheduleCrackle(layer); }, 60 + rand()*260); }
+  // 篝火爆裂性格：由用户勾选的 FIRE_CHARS 轮流触发
+  function firePop(layer, char){
+    const now=ctx.currentTime;
+    if (char==='burst'){ const n=3+Math.floor(rand()*4); for(let i=0;i<n;i++) pop(layer, now+i*(0.02+rand()*0.03), {f:1600+rand()*2800, q:2, dur:0.015+rand()*0.03, amp:0.10+rand()*0.24}); }
+    else if (char==='collapse'){ thud(layer, now); const n=2+Math.floor(rand()*3); for(let i=0;i<n;i++) pop(layer, now+0.04+i*(0.03+rand()*0.05), {f:900+rand()*1400, q:1.4, dur:0.03+rand()*0.05, amp:0.10+rand()*0.20}); }
+    else if (char==='ember'){ pop(layer, now+rand()*0.15, {f:5000+rand()*2500, q:3, dur:0.06+rand()*0.12, amp:0.03+rand()*0.06}); }
+    else { const n=1+Math.floor(rand()*2); for(let i=0;i<n;i++) pop(layer, now+rand()*0.14, {f:1200+rand()*2600, q:1.6, dur:0.02+rand()*0.05, amp:0.10+rand()*0.32}); }   // snap
+  }
+  function pop(layer, when, o){
+    o=o||{};
+    const b=ctx.createBufferSource(); b.buffer=buffers.white; b.loop=true;
+    const bp=ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=(o.f!=null?o.f:1200+rand()*2600); bp.Q.value=(o.q!=null?o.q:1.6);
+    const g=ctx.createGain(); g.gain.value=0; b.connect(bp); bp.connect(g); g.connect(layer.gain);
+    const dur=(o.dur!=null?o.dur:0.02+rand()*0.05), amp=(o.amp!=null?o.amp:0.10+rand()*0.32);
     g.gain.setValueAtTime(0.0001,when); g.gain.linearRampToValueAtTime(amp,when+0.003); g.gain.exponentialRampToValueAtTime(0.0006,when+dur);
     b.start(when); b.stop(when+dur+0.02); b.onended=()=>{try{b.disconnect();bp.disconnect();g.disconnect();}catch(e){}};
     if (amp>0.24) scene.ember(layer.cfg.color);
   }
 
-  // 咖啡馆：人声嗡响 + 偶发瓷器碰杯
-  function scheduleClink(layer){ layer.clinkTimer = setTimeout(() => { if(!layer.active) return; if(masterPlaying) clink(layer); scheduleClink(layer); }, 2500 + rand()*6500); }
+  // 咖啡馆：底噪录音之上叠加用户勾选的环境细节（碰杯/磨豆/咖啡机/汤匙）
+  function scheduleCafe(layer){ layer.clinkTimer = setTimeout(() => { if(!layer.active) return; if(masterPlaying){ const evs=selForSound('cafe', []); if (evs.length) cafeEvent(layer, evs[Math.floor(rand()*evs.length)]); } scheduleCafe(layer); }, 2500 + rand()*6500); }
+  function cafeEvent(layer, id){
+    if (id==='clink'){ clink(layer); return; }
+    const now=ctx.currentTime+0.02;
+    if (id==='spoon'){   // 汤匙搅拌：轻脆的高频叮
+      const f=3200+rand()*1600; const o=ctx.createOscillator(); o.type='sine'; o.frequency.value=f;
+      const g=ctx.createGain(); g.gain.value=0; o.connect(g); g.connect(layer.gain); const dur=0.12;
+      g.gain.setValueAtTime(0.0001,now); g.gain.linearRampToValueAtTime(0.05,now+0.003); g.gain.exponentialRampToValueAtTime(0.0004,now+dur);
+      o.start(now); o.stop(now+dur+0.03); o.onended=()=>{try{o.disconnect();g.disconnect();}catch(e){}};
+    } else if (id==='grinder'){   // 磨豆：一段低沉粗砺的研磨
+      const dur=0.5+rand()*0.5; const b=ctx.createBufferSource(); b.buffer=buffers.brown; b.loop=true;
+      const bp=ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=380+rand()*260; bp.Q.value=1.2;
+      const g=ctx.createGain(); g.gain.value=0; b.connect(bp); bp.connect(g); g.connect(layer.gain);
+      const lfo=ctx.createOscillator(); lfo.type='square'; lfo.frequency.value=55+rand()*30; const lg=ctx.createGain(); lg.gain.value=0.035; lfo.connect(lg); lg.connect(g.gain);
+      g.gain.setValueAtTime(0.0001,now); g.gain.linearRampToValueAtTime(0.08,now+0.05); g.gain.setValueAtTime(0.08,now+dur-0.1); g.gain.exponentialRampToValueAtTime(0.0004,now+dur);
+      lfo.start(now); lfo.stop(now+dur+0.02); b.start(now); b.stop(now+dur+0.03);
+      b.onended=()=>{try{b.disconnect();bp.disconnect();g.disconnect();lfo.disconnect();lg.disconnect();}catch(e){}};
+    } else if (id==='steam'){   // 咖啡机蒸汽：高频嘶响
+      const dur=0.6+rand()*0.6; const b=ctx.createBufferSource(); b.buffer=buffers.white; b.loop=true;
+      const hp=ctx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=3500;
+      const g=ctx.createGain(); g.gain.value=0; b.connect(hp); hp.connect(g); g.connect(layer.gain);
+      g.gain.setValueAtTime(0.0001,now); g.gain.linearRampToValueAtTime(0.06,now+0.08); g.gain.setValueAtTime(0.06,now+dur-0.15); g.gain.exponentialRampToValueAtTime(0.0004,now+dur);
+      b.start(now); b.stop(now+dur+0.03); b.onended=()=>{try{b.disconnect();hp.disconnect();g.disconnect();}catch(e){}};
+    }
+  }
   function clink(layer){
     const when=ctx.currentTime+0.02, f=1800+rand()*2400;
     const o=ctx.createOscillator(); o.type='sine'; o.frequency.value=f;
@@ -612,6 +850,33 @@
     t.start(when); t.stop(when+0.08); t.onended=()=>{try{t.disconnect();bp.disconnect();tg.disconnect();}catch(e){}};
   }
 
+  // 时钟滴答：周期性双拍（滴 / 答）—— 无连续底噪，纯事件
+  function scheduleTock(layer){
+    let alt=false;
+    (function loop(){ if(!layer.active) return; if(masterPlaying){ tickOnce(layer, alt); alt=!alt; } layer.tickTimer=setTimeout(loop, 1000); })();
+  }
+  function tickOnce(layer, hi){
+    const when=ctx.currentTime+0.01, f= hi?2100:1500;
+    const o=ctx.createOscillator(); o.type='square'; o.frequency.value=f;
+    const bp=ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=f; bp.Q.value=8;
+    const g=ctx.createGain(); g.gain.value=0; o.connect(bp); bp.connect(g); g.connect(layer.gain);
+    const dur=0.028;
+    g.gain.setValueAtTime(0.0001,when); g.gain.linearRampToValueAtTime(0.16,when+0.002); g.gain.exponentialRampToValueAtTime(0.0004,when+dur);
+    o.start(when); o.stop(when+dur+0.02); o.onended=()=>{try{o.disconnect();bp.disconnect();g.disconnect();}catch(e){}};
+  }
+
+  // 翻书：偶发纸张摩挲
+  function scheduleRustle(layer){ layer.pageTimer=setTimeout(()=>{ if(!layer.active) return; if(masterPlaying) rustle(layer); scheduleRustle(layer); }, 4000+rand()*9000); }
+  function rustle(layer){
+    const when=ctx.currentTime+0.02, dur=0.26+rand()*0.24;
+    const b=ctx.createBufferSource(); b.buffer=buffers.white; b.loop=true;
+    const bp=ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=2600+rand()*1800; bp.Q.value=0.8;
+    const g=ctx.createGain(); g.gain.value=0; b.connect(bp); bp.connect(g); g.connect(layer.gain);
+    g.gain.setValueAtTime(0.0001,when); g.gain.linearRampToValueAtTime(0.09+rand()*0.06,when+0.05); g.gain.linearRampToValueAtTime(0.0004,when+dur);
+    b.start(when); b.stop(when+dur+0.03); b.onended=()=>{try{b.disconnect();bp.disconnect();g.disconnect();}catch(e){}};
+    scene.spark(layer.cfg.color);
+  }
+
   // 颂钵：非谐泛音 + 拍频 + 周期敲击
   function buildBowl(layer, cfg){
     const ratios=[1,2.02,2.72,4.95,5.42,8.9];
@@ -637,11 +902,28 @@
   }
 
   function rampMaster(to, dt){ const now=ctx.currentTime; master.gain.cancelScheduledValues(now); master.gain.setValueAtTime(Math.max(master.gain.value,0.0001), now); master.gain.linearRampToValueAtTime(to, now+dt); }
+  let suspendT=0;
   function setPlaying(on){
     masterPlaying = on;
-    if (ctx) rampMaster(on?masterTarget():0, 0.4);
+    if (ctx){
+      if (on){
+        clearTimeout(suspendT);
+        if (ctx.state !== 'running'){ const p=ctx.resume(); if (p&&p.catch) p.catch(()=>{}); }
+        rampMaster(masterTarget(), 0.4);
+      } else {
+        rampMaster(0, 0.4);
+        clearTimeout(suspendT);
+        suspendT = setTimeout(suspendEngine, 900);   // 渐隐结束后挂起音频图，引擎熄火（D8）
+      }
+    }
+    keepAlive(on);                                   // 保活与 mediaSession 特性检测解耦（D9）
     reflectPlay();
     updateMediaSession();
+    reflectImmersive();                              // 播放态变化 → Wake Lock / 沉浸态（F-9）
+  }
+  function suspendEngine(){                           // D8：停播/定时结束后不空转，CPU/电耗回落空载
+    if (masterPlaying || !ctx) return;
+    if (ctx.state === 'running'){ const p=ctx.suspend(); if (p&&p.catch) p.catch(()=>{}); }
   }
 
   function removeLayer(id, fade){
@@ -874,8 +1156,24 @@
     v.setUint16(32,2,true); v.setUint16(34,16,true); ws(36,'data'); v.setUint32(40,len*2,true);
     return URL.createObjectURL(new Blob([buf],{type:'audio/wav'}));
   }
-  function setupKeepAlive(){ if (keepEl) return; try{ keepEl=new Audio(silentWavUrl()); keepEl.loop=true; keepEl.preload='auto'; keepEl.setAttribute('playsinline',''); keepEl.volume=1; }catch(e){ keepEl=null; } }
+  function setupKeepAlive(){
+    if (keepEl) return;
+    try{
+      keepEl=new Audio(silentWavUrl()); keepEl.loop=true; keepEl.preload='auto'; keepEl.setAttribute('playsinline',''); keepEl.volume=1;
+      keepEl.addEventListener('pause', () => { if (masterPlaying) attemptRecover(); });   // 中断暂停了保活元素 → 自愈（D7）
+    }catch(e){ keepEl=null; }
+  }
   function keepAlive(on){ if (!keepEl) return; if (on){ const p=keepEl.play(); if (p&&p.catch) p.catch(()=>{}); } else { try{ keepEl.pause(); }catch(e){} } }
+  // ---- 系统中断自动恢复（F-2 / D7）：无需解锁亮屏，中断结束后 ≤5s 自动重拉播放 ----
+  let recoverT=0;
+  function attemptRecover(){
+    clearTimeout(recoverT);
+    if (!masterPlaying || !ctx) return;
+    if (ctx.state !== 'running'){ const p=ctx.resume(); if (p&&p.catch) p.catch(()=>{}); }
+    keepAlive(true);
+    if (ctx.state === 'running') return;                 // 已恢复
+    recoverT = setTimeout(attemptRecover, 1500);         // 中断仍在 → 每 1.5s 重试（累计 ≤5s 内恢复）
+  }
   function setupMediaSession(){
     if (!('mediaSession' in navigator)) return;
     try{
@@ -886,7 +1184,6 @@
   }
   function updateMediaSession(){
     if (!('mediaSession' in navigator)) return;
-    keepAlive(masterPlaying);
     try{
       navigator.mediaSession.playbackState = masterPlaying?'playing':'paused';
       const ids=[...layers.keys()], st=matchStation();
@@ -917,7 +1214,7 @@
       ? '<rect x="6.5" y="5" width="4" height="14" rx="1"/><rect x="13.5" y="5" width="4" height="14" rx="1"/>'
       : '<path d="M8 5.5v13a1 1 0 0 0 1.5.87l11-6.5a1 1 0 0 0 0-1.74l-11-6.5A1 1 0 0 0 8 5.5Z"/>';
   }
-  const POEMS = { 'storm':'雷雨将至','hrain':'雨落如帘','lrain':'檐下细雨','ocean':'潮汐往复','forest':'林间有风','birds':'晨鸟啁啾','fall':'水声轰鸣','stream':'溪流潺潺','wind':'风过旷野','breeze':'微风拂面','white':'一片纯净','pink':'柔和绵长','brown':'低沉温厚','fan':'室内静谧','ac':'凉夜微鸣','hum':'低鸣入眠','fire':'篝火噼啪','cafe':'咖啡馆微响','train':'夜行列车','bowl':'钵音绵长' };
+  const POEMS = { 'storm':'雷雨将至','hrain':'雨落如帘','lrain':'檐下细雨','ocean':'潮汐往复','forest':'林间有风','birds':'晨鸟啁啾','insects':'虫鸣阵阵','fall':'水声轰鸣','stream':'溪流潺潺','wind':'风过旷野','breeze':'微风拂面','snow':'落雪无声','white':'一片纯净','pink':'柔和绵长','brown':'低沉温厚','fan':'室内静谧','ac':'凉夜微鸣','hum':'低鸣入眠','fire':'篝火噼啪','cafe':'咖啡馆微响','train':'夜行列车','subway':'地下轰隆','pages':'书页翻动','tick':'滴答入夜','purr':'猫眠呼噜','bowl':'钵音绵长' };
   function stationLine(st){ let best=null, bv=-1; Object.keys(st.mix).forEach(id=>{ if (st.mix[id]>bv){ bv=st.mix[id]; best=id; } }); return (best && POEMS[best]) || st.name; }
   function reflectState(){
     const n = layers.size, ids = [...layers.keys()];
@@ -961,16 +1258,54 @@
       b.innerHTML = '<span class="dot" style="color:'+s.color+'"></span>'+s.name;
       b.addEventListener('click', () => toggleSound(s.id)); box.appendChild(b);
     });
+    // 该分类下挂载的所有「子选择器」（鸟种/虫种/篝火性格/咖啡细节/雨的质地）
+    VARIANT_PICKERS.filter(p => p.cat===activeCat).forEach(p => box.appendChild(buildVariantPicker(p)));
+  }
+  function buildVariantPicker(p){
+    const wrap=document.createElement('div'); wrap.className='bird-picker';
+    const head=document.createElement('div'); head.className='bird-picker-head';
+    head.innerHTML='<span class="dot" style="color:'+p.dot+'"></span>'+p.label;
+    const row=document.createElement('div'); row.className='bird-chips'; row.setAttribute('role','group'); row.setAttribute('aria-label',p.label);
+    const cur=variantGet(p); const on=id=> p.mode==='single' ? cur===id : cur.includes(id);
+    p.members.forEach(m=>{
+      const b=document.createElement('button'); b.type='button'; b.className='bird-chip'; b.dataset.pk=p.key; b.dataset.m=m.id;
+      b.setAttribute('aria-pressed', String(on(m.id))); if (m.desc) b.title=m.desc;
+      b.innerHTML='<span class="bd" style="background:'+p.dot+'"></span>'+m.name;
+      b.addEventListener('click', ()=>toggleVariant(p, m.id));
+      row.appendChild(b);
+    });
+    wrap.append(head, row); return wrap;
+  }
+  function toggleVariant(p, id){
+    const nm=(p.members.find(m=>m.id===id)||{}).name || id;
+    const enableIfBound=()=>{ if (p.sound && byId(p.sound) && p.autoEnable!==false && !layers.has(p.sound)) toggleSound(p.sound); };
+    if (p.mode==='single'){
+      variantSet(p, id); if (p.onSelect) p.onSelect(id); enableIfBound();
+      toast('已选「'+nm+'」'); reflectVariantChips(p); return;
+    }
+    const set=new Set(variantGet(p));
+    if (set.has(id)){
+      if (set.size <= (p.min||0)){ toast('至少留一种'); return; }
+      set.delete(id); variantSet(p, [...set]); toast('已收起「'+nm+'」');
+    } else {
+      set.add(id); variantSet(p, [...set]); enableIfBound(); toast('已加入「'+nm+'」');
+    }
+    reflectVariantChips(p);
+  }
+  function reflectVariantChips(p){
+    const cur=variantGet(p); const on=id=> p.mode==='single' ? cur===id : cur.includes(id);
+    document.querySelectorAll('.bird-chip[data-pk="'+p.key+'"]').forEach(b=> b.setAttribute('aria-pressed', String(on(b.dataset.m))));
   }
 
   // 定时
   let timerEnd=0, timerTick=null, timerFading=false;
-  function cancelTimer(){ if (timerTick){ clearInterval(timerTick); timerTick=null; } timerEnd=0; timerFading=false; $('countdown').textContent=''; }
+  function cancelTimer(){ if (timerTick){ clearInterval(timerTick); timerTick=null; } timerEnd=0; timerFading=false; $('countdown').textContent=''; stopDim(); }
   function setTimerChips(id){ document.querySelectorAll('#timers .tchip').forEach(c => c.setAttribute('aria-pressed', String(c.dataset.id===id))); }
   function setTimer(mins, id){
     setTimerChips(id); cancelTimer(); if (!mins) return;
     if (layers.size===0){ nudge(); setTimerChips('off'); return; }
     if (!masterPlaying){ ensureCtx(); if (ctx.state==='suspended') ctx.resume(); setPlaying(true); reflectState(); }
+    startDim(mins);                                    // 入睡调光：声音渐隐的视觉对应物（F-9）
     timerEnd = Date.now() + mins*60000;
     timerTick = setInterval(() => { const left = timerEnd - Date.now();
       if (left<=0){ cancelTimer(); setTimerChips('off'); setPlaying(false); reflectState(); return; }
@@ -981,17 +1316,22 @@
   const TIMERS = [['off','关'],['15','15'],['30','30'],['45','45'],['60','60'],['90','90']];
   TIMERS.forEach(([id,label]) => { const b=document.createElement('button'); b.className='tchip'; b.dataset.id=id; b.setAttribute('aria-pressed', String(id==='off')); b.textContent=label; b.addEventListener('click', () => setTimer(id==='off'?0:parseInt(id,10), id)); $('timers').appendChild(b); });
 
-  // 时钟（页面隐藏时停跳，F-5）
+  // 时钟（页面隐藏时停跳 F-5；秒针可切换 + 防烧屏漂移 F-9）
   let clockTimer=0;
+  let showSec = localStorage.getItem('lull.showSec'); showSec = showSec===null ? true : showSec==='1';
   function tickClock(){
     const d = new Date(), hh = String(d.getHours()).padStart(2,'0'), mm = String(d.getMinutes()).padStart(2,'0'), ss = String(d.getSeconds()).padStart(2,'0');
-    $('clock').innerHTML = hh+':'+mm+'<span class="sec">'+ss+'</span>';
+    $('clock').innerHTML = hh+':'+mm + (showSec ? '<span class="sec">'+ss+'</span>' : '');
     const wd = ['周日','周一','周二','周三','周四','周五','周六'][d.getDay()];
     $('datemeta').textContent = (d.getMonth()+1)+'月'+d.getDate()+'日 · '+wd;
+    // 防烧屏：每分钟缓慢改变时钟位移，OLED 挂机 8h 无固定高对比常驻像素
+    const mins = d.getHours()*60 + d.getMinutes();
+    $('clock').style.transform = 'translate('+(Math.sin(mins*0.7)*7).toFixed(1)+'px,'+(Math.cos(mins*0.9)*5).toFixed(1)+'px)';
     clockTimer = setTimeout(tickClock, 1000 - (Date.now()%1000));
   }
   function startClock(){ if (clockTimer) return; tickClock(); }
   function stopClock(){ if (clockTimer){ clearTimeout(clockTimer); clockTimer=0; } }
+  function toggleSeconds(){ showSec=!showSec; localStorage.setItem('lull.showSec', showSec?'1':'0'); clearTimeout(clockTimer); clockTimer=0; tickClock(); }
   startClock();
 
   // ---------- 生成式场景 ----------
@@ -999,7 +1339,7 @@
     const cv = $('scene'), g = cv.getContext('2d');
     let W=0, H=0, dpr=1, lastT=performance.now();
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const stars=[], rainP=[], windP=[], motes=[], sparks=[], flashes=[], emberP=[], bokehP=[], railP=[], ripples=[];
+    const stars=[], rainP=[], windP=[], motes=[], sparks=[], flashes=[], emberP=[], bokehP=[], railP=[], snowP=[], ripples=[];
     let oceanPhase=0;
     // 帧率自适应 + 后台停画（F-2 / F-5）
     let running=true, frameReq=0, lastFrame=0;
@@ -1012,13 +1352,17 @@
     function resize(){
       dpr = Math.min(devicePixelRatio||1, 2); W = innerWidth; H = innerHeight;
       cv.width = W*dpr; cv.height = H*dpr; g.setTransform(dpr,0,0,dpr,0,0);
-      stars.length=0; for (let i=0;i<80;i++) stars.push({x:rand()*W, y:rand()*H*0.75, r:rand()*1.2+0.3, ph:rand()*6.28});
-      rainP.length=0; for (let i=0;i<200;i++) rainP.push({x:rand()*W, y:rand()*H, len:8+rand()*16, sp:6+rand()*7});
-      windP.length=0; for (let i=0;i<70;i++) windP.push({x:rand()*W, y:rand()*H*0.9, len:20+rand()*50, sp:1.5+rand()*3, o:0.2+rand()*0.5});
-      motes.length=0; for (let i=0;i<55;i++) motes.push({x:rand()*W, y:rand()*H, r:rand()*2+0.6, ph:rand()*6.28, dx:(rand()-0.5)*0.3, dy:-(0.1+rand()*0.35)});
-      emberP.length=0; for (let i=0;i<60;i++) emberP.push({x:W*(0.3+rand()*0.4), y:H*(0.7+rand()*0.3), r:rand()*1.6+0.6, sp:0.3+rand()*0.9, ph:rand()*6.28, dx:(rand()-0.5)*0.3});
-      bokehP.length=0; for (let i=0;i<24;i++) bokehP.push({x:rand()*W, y:rand()*H, r:20+rand()*60, ph:rand()*6.28, dx:(rand()-0.5)*0.15, dy:(rand()-0.5)*0.1});
-      railP.length=0; for (let i=0;i<40;i++) railP.push({x:rand()*W, y:rand()*H*0.85, len:40+rand()*80, sp:10+rand()*10, o:0.15+rand()*0.4});
+      // 粒子密度按屏幕面积缩放（F-9）：小屏保底、4K 增密，仍设上限防性能失控
+      const areaK = Math.max(0.7, Math.min(3, (W*H)/(1280*760)));
+      const N = (base, mult) => Math.max(1, Math.round(base * Math.min(areaK, mult||3)));
+      stars.length=0; for (let i=0;i<N(80);i++) stars.push({x:rand()*W, y:rand()*H*0.75, r:rand()*1.2+0.3, ph:rand()*6.28});
+      rainP.length=0; for (let i=0;i<N(200,2.6);i++) rainP.push({x:rand()*W, y:rand()*H, len:8+rand()*16, sp:6+rand()*7});
+      windP.length=0; for (let i=0;i<N(70);i++) windP.push({x:rand()*W, y:rand()*H*0.9, len:20+rand()*50, sp:1.5+rand()*3, o:0.2+rand()*0.5});
+      motes.length=0; for (let i=0;i<N(55);i++) motes.push({x:rand()*W, y:rand()*H, r:rand()*2+0.6, ph:rand()*6.28, dx:(rand()-0.5)*0.3, dy:-(0.1+rand()*0.35)});
+      emberP.length=0; for (let i=0;i<N(60);i++) emberP.push({x:W*(0.3+rand()*0.4), y:H*(0.7+rand()*0.3), r:rand()*1.6+0.6, sp:0.3+rand()*0.9, ph:rand()*6.28, dx:(rand()-0.5)*0.3});
+      bokehP.length=0; for (let i=0;i<N(24,1.8);i++) bokehP.push({x:rand()*W, y:rand()*H, r:20+rand()*60, ph:rand()*6.28, dx:(rand()-0.5)*0.15, dy:(rand()-0.5)*0.1});
+      railP.length=0; for (let i=0;i<N(40);i++) railP.push({x:rand()*W, y:rand()*H*0.85, len:40+rand()*80, sp:10+rand()*10, o:0.15+rand()*0.4});
+      snowP.length=0; for (let i=0;i<N(90,2.6);i++) snowP.push({x:rand()*W, y:rand()*H, r:rand()*1.8+0.7, sp:0.5+rand()*1.1, drift:(rand()-0.5)*0.6, ph:rand()*6.28, a:0.5+rand()*0.5});
     }
 
     // 各气象强度（依据当前混音 + 音量）
@@ -1061,6 +1405,8 @@
       const iw = intensity('wind'); if (iw>0.01) drawWind(iw, tintOf('wind','#bfe6cf'), dt, dark);
       // 雨
       const ir = intensity('rain'); if (ir>0.01) drawRain(ir, tintOf('rain','#9cc2ff'), dt, dark);
+      // 落雪
+      const isn = intensity('snow'); if (isn>0.01) drawSnow(isn, tintOf('snow','#dbe7ff'), now, dt);
       // 室内薄雾（呼吸）
       const ih = intensity('haze'); if (ih>0.01){ const p=0.5+0.5*Math.sin(now/2600); g.globalAlpha=ih*0.12*(0.6+0.4*p); const rg=g.createRadialGradient(W/2,H*0.55,0,W/2,H*0.55,Math.max(W,H)*0.7); const [r,gg,bb]=hexToRgb(tintOf('haze','#b6c4d0')); rg.addColorStop(0,`rgba(${r},${gg},${bb},1)`); rg.addColorStop(1,'rgba(0,0,0,0)'); g.fillStyle=rg; g.fillRect(0,0,W,H); g.globalAlpha=1; }
 
@@ -1127,6 +1473,15 @@
       const [r,gg,bb]=hexToRgb(col); const count=Math.floor(windP.length*I);
       for (let i=0;i<count;i++){ const p=windP[i]; if (!reduce){ p.x += p.sp*(0.6+I)* (dt*60); if (p.x>W+p.len){ p.x=-p.len; p.y=rand()*H*0.9; } }
         g.strokeStyle=`rgba(${r},${gg},${bb},${p.o*I*0.5})`; g.lineWidth=1; g.beginPath(); g.moveTo(p.x,p.y); g.lineTo(p.x+p.len,p.y - p.len*0.12); g.stroke(); }
+    }
+    function drawSnow(I, col, now, dt){
+      const [r,gg,bb]=hexToRgb(col); const count=Math.floor(snowP.length*I);
+      for (let i=0;i<count;i++){ const p=snowP[i];
+        if (!reduce){ p.y += p.sp*(0.4+0.6*I)*(dt*60); p.x += (p.drift + Math.sin(now/1400+p.ph)*0.4)*(dt*60);
+          if (p.y>H+4){ p.y=-4; p.x=rand()*W; } if (p.x<-6) p.x=W+6; if (p.x>W+6) p.x=-6; }
+        g.globalAlpha=I*0.7*p.a; g.fillStyle=`rgba(${r},${gg},${bb},1)`;
+        g.beginPath(); g.arc(p.x,p.y,p.r,0,6.283); g.fill(); }
+      g.globalAlpha=1;
     }
     function drawRain(I, col, dt, dark){
       const [r,gg,bb]=hexToRgb(col); const count=Math.floor(rainP.length*I);
@@ -1195,26 +1550,90 @@
     };
   })();
 
+  // ---------- 沉浸挂机模式（F-9）：Wake Lock · 自动隐藏 UI · 全屏 · 入睡调光 ----------
+  // 屏幕常亮：仅「播放且页面可见」时持有；不支持则一次性降级提示
+  let wakeLock=null, wakeNoticed=false;
+  async function requestWakeLock(){
+    if (!('wakeLock' in navigator)){ if (!wakeNoticed){ wakeNoticed=true; toast('本机不支持屏幕常亮 · 挂机请手动保持亮屏'); } return; }
+    if (wakeLock || document.hidden || !masterPlaying) return;
+    try{ wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', ()=>{ wakeLock=null; }); }catch(e){ wakeLock=null; }
+  }
+  function releaseWakeLock(){ if (wakeLock){ try{ wakeLock.release(); }catch(e){} wakeLock=null; } }
+
+  // 沉浸态：播放中 8s 无交互 → 隐藏控制台与光标、时钟放大；任意输入立即恢复
+  let idleT=0;
+  function scheduleImmersive(){ clearTimeout(idleT); if (masterPlaying && !document.hidden) idleT=setTimeout(enterImmersive, 8000); }
+  function enterImmersive(){ if (!masterPlaying) return; document.body.classList.remove('waking'); document.body.classList.add('immersive'); }
+  function exitImmersive(){ if (document.body.classList.contains('immersive')){ document.body.classList.add('waking'); document.body.classList.remove('immersive'); } }
+  function wake(){ exitImmersive(); scheduleImmersive(); }
+  function reflectImmersive(){
+    if (masterPlaying){ requestWakeLock(); scheduleImmersive(); }
+    else { releaseWakeLock(); exitImmersive(); clearTimeout(idleT); }
+  }
+  ['pointermove','pointerdown','wheel','touchstart'].forEach(ev => addEventListener(ev, wake, {passive:true}));
+
+  // 全屏
+  function toggleFullscreen(){
+    const el=document.documentElement;
+    if (!document.fullscreenElement && !document.webkitFullscreenElement){
+      const r=el.requestFullscreen||el.webkitRequestFullscreen;
+      if (r){ const p=r.call(el); if (p&&p.catch) p.catch(()=>{}); } else toast('此浏览器不支持全屏');
+    } else { (document.exitFullscreen||document.webkitExitFullscreen||function(){}).call(document); }
+  }
+  function reflectFs(){
+    const on=!!(document.fullscreenElement||document.webkitFullscreenElement);
+    $('fs-ico').innerHTML = on
+      ? '<path d="M9 4v3a2 2 0 0 1-2 2H4M20 9h-3a2 2 0 0 1-2-2V4M4 15h3a2 2 0 0 1 2 2v3M15 20v-3a2 2 0 0 1 2-2h3"/>'
+      : '<path d="M4 9V5a1 1 0 0 1 1-1h4M20 9V5a1 1 0 0 0-1-1h-4M4 15v4a1 1 0 0 0 1 1h4M20 15v4a1 1 0 0 1-1 1h-4"/>';
+    $('fullscreen').setAttribute('aria-label', on?'退出全屏（F）':'全屏（F）');
+  }
+  document.addEventListener('fullscreenchange', reflectFs);
+  document.addEventListener('webkitfullscreenchange', reflectFs);
+
+  // 入睡调光：定时器启动后画面/UI 亮度数分钟内渐降至约 30%（reduced-motion 直接到位）
+  function startDim(mins){
+    const veil=$('dim-veil'), reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const ramp=Math.min(mins*60*0.6, 240);
+    veil.style.transition = reduce ? 'none' : ('opacity '+ramp+'s linear');
+    void veil.offsetWidth; veil.style.opacity='0.7';
+  }
+  function stopDim(){ const veil=$('dim-veil'); veil.style.transition='opacity 1.6s ease'; void veil.offsetWidth; veil.style.opacity='0'; }
+
+  // 桌面/键盘快捷键：Space 播放暂停 · F 全屏 · Esc 退出沉浸 · 1–6 切内置频道
+  addEventListener('keydown', e => {
+    if (e.metaKey||e.ctrlKey||e.altKey) return;
+    const t=e.target, tag=t&&t.tagName, role=t&&t.getAttribute&&t.getAttribute('role');
+    const guarded = tag==='INPUT'||tag==='TEXTAREA'||(t&&t.isContentEditable)||role==='slider';
+    wake();
+    if (e.key===' '){ if (guarded||tag==='BUTTON') return; e.preventDefault(); toggleMaster(); }
+    else if (e.key==='f'||e.key==='F'){ if (guarded) return; e.preventDefault(); toggleFullscreen(); }
+    else if (e.key==='Escape'){ exitImmersive(); }
+    else if (e.key>='1'&&e.key<='6'){ if (guarded) return; const p=BUILTIN_PRESETS[+e.key-1]; if (p){ tuneTo(p, true); toast('已调到「'+p.name+'」· '+p.fm.toFixed(1)); } }
+  });
+
   // ---------- 事件 & 初始化 ----------
   $('play').addEventListener('click', toggleMaster);
+  $('fullscreen').addEventListener('click', toggleFullscreen);
+  $('clock').addEventListener('click', toggleSeconds);
+  $('clock').addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' '){ e.preventDefault(); e.stopPropagation(); toggleSeconds(); } });
   $('clear').addEventListener('click', clearAll);
   $('share').addEventListener('click', shareMix);
   $('save-preset').addEventListener('click', saveCurrentAsPreset);
   $('resume').addEventListener('click', () => { if (pendingMix){ const m=pendingMix; pendingMix=null; loadMix(m, true); } });
   const volEl = $('vol'); volEl.value = masterVol; volEl.addEventListener('input', e => setMasterVol(parseInt(e.target.value,10)));
 
-  // 可见性：后台省电（停画/停钟），回前台恢复音频与画面（F-2 / F-5）
+  // 可见性：后台省电（停画/停钟 + 释放 Wake Lock），回前台恢复音频/画面/常亮（F-2 / F-5 / F-9）
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden){ scene.pause(); stopClock(); }
+    if (document.hidden){ scene.pause(); stopClock(); releaseWakeLock(); clearTimeout(idleT); }
     else {
-      if (ctx && masterPlaying && ctx.state==='suspended') ctx.resume();
-      if (masterPlaying) keepAlive(true);
+      if (ctx && masterPlaying && ctx.state!=='running') attemptRecover();  // 覆盖 suspended / interrupted
+      if (masterPlaying){ keepAlive(true); requestWakeLock(); scheduleImmersive(); }
       scene.resume(); startClock();
     }
   });
-  window.addEventListener('pageshow', () => { if (ctx && masterPlaying && ctx.state==='suspended') ctx.resume(); });
+  window.addEventListener('pageshow', () => { if (ctx && masterPlaying && ctx.state!=='running') attemptRecover(); });
 
-  setMasterVol(masterVol); renderTabs(); renderChips(); renderMixer(); initTuner(); reflectPlay(); reflectState();
+  setMasterVol(masterVol); renderTabs(); renderChips(); renderMixer(); initTuner(); reflectPlay(); reflectState(); reflectFs();
   initRestore();
 
   // PWA：仅 http(s) 下注册 Service Worker（file:// 直开无需，见 README）
