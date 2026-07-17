@@ -4,6 +4,13 @@
 经裁剪为 60 秒、转码为单声道 MP3。**部分为 CC BY-SA，不适合商用闭源产品**——
 正式发布前请替换为 CC0 / 可商用素材（Pixabay、Freesound-CC0 等）。
 
+> 引擎说明（v0.2 起）：这些文件不再走 `<audio>` 元素，而是 `fetch` + `decodeAudioData`
+> 解码进 `AudioBufferSourceNode`（`loop=true`），与合成层共用同一套 gain / 混响 / 主总线。
+> `AudioBufferSourceNode` 的循环是采样级无缝的——**因此素材本身必须首尾可循环**（首尾能量、
+> 相位尽量接近），否则会在循环点听到跳变。建议替换素材时用编辑器做首尾交叉淡化预处理。
+>
+> 代码许可证：MIT（见 [LICENSE](LICENSE)）。以下音频许可证与代码彼此独立。
+
 | 文件 | 声音 | 许可证 | 商用 | 原始来源（Commons File:） |
 |---|---|---|---|---|
 | `cafe.mp3`   | 咖啡馆 | Public domain | ✅ | Restaurant ambience.ogg |

@@ -4,6 +4,15 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Lull · 声音气象台</title>
+<meta name="description" content="Lull · 声音气象台 — 白噪音混音 + 生成式场景，助眠与专注。" />
+<meta name="theme-color" content="#0b1418" media="(prefers-color-scheme: dark)" />
+<meta name="theme-color" content="#eef3ee" media="(prefers-color-scheme: light)" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Lull" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
 <style>
   :root {
     --serif: ui-serif, "New York", "Songti SC", Georgia, "Times New Roman", serif;
@@ -167,6 +176,34 @@
   .tchip[aria-pressed="true"] { color: #0c1413; background: var(--warm); border-color: transparent; }
   .countdown { font-family: var(--mono); font-size: 11px; color: var(--warm); margin-left: auto; font-variant-numeric: tabular-nums; }
 
+  /* 预设 · 会话恢复 */
+  .presets { display: flex; flex-direction: column; gap: 10px; }
+  .presets.solo-empty { display: flex; }
+  .preset-head { display: flex; align-items: center; justify-content: space-between; }
+  .save-preset { appearance: none; border: none; background: none; color: var(--ink-faint); font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
+  .save-preset:hover { color: var(--aurora); }
+  .pchips { display: flex; gap: 7px; flex-wrap: wrap; }
+  .pchip { position: relative; appearance: none; cursor: pointer; font-family: var(--sans); font-size: 12.5px; padding: 7px 13px; border-radius: 11px; border: 1px solid var(--line-strong); background: var(--glass-2); color: var(--ink-dim); transition: color .15s, border-color .15s, transform .08s; }
+  .pchip:hover { color: var(--ink); border-color: var(--aurora); }
+  .pchip:active { transform: scale(.95); }
+  .pchip.custom { padding-right: 27px; }
+  .pchip .del { position: absolute; right: 5px; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; display: grid; place-items: center; border-radius: 50%; font-size: 14px; line-height: 1; color: var(--ink-faint); }
+  .pchip .del:hover { color: var(--warm); }
+  .resume { appearance: none; cursor: pointer; text-align: left; width: 100%; font-family: var(--sans); font-size: 13px; padding: 11px 14px; border-radius: 13px; border: 1px solid var(--line-strong); color: var(--ink); display: flex; align-items: center; gap: 9px;
+    background: radial-gradient(130% 170% at 12% 20%, color-mix(in oklab, var(--warm) 20%, transparent), transparent 68%), var(--glass-2); transition: border-color .18s, transform .1s; }
+  .resume::before { content: "↻"; color: var(--warm); font-size: 16px; }
+  .resume:hover { border-color: var(--warm); }
+  .resume:active { transform: scale(.985); }
+  .resume[hidden] { display: none; }   /* 类选择器的 display:flex 会盖过 [hidden]，显式复位 */
+  .mix-actions { display: flex; gap: 12px; }
+
+  /* toast */
+  .toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom)); transform: translateX(-50%) translateY(12px);
+    background: var(--glass-2); color: var(--ink); border: 1px solid var(--line-strong); border-radius: 12px; padding: 9px 15px;
+    font-size: 12.5px; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 12px 40px rgba(0,0,0,.35);
+    opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s; z-index: 5; max-width: 90vw; text-align: center; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
   :focus-visible { outline: 2px solid var(--aurora); outline-offset: 3px; border-radius: 8px; }
   @media (prefers-reduced-motion: reduce) { *:not(#scene) { animation: none !important; transition: none !important; } }
 </style>
@@ -205,10 +242,22 @@
         </div>
       </div>
 
+      <div class="presets" id="presets-wrap">
+        <button class="resume" id="resume" hidden></button>
+        <div class="preset-head">
+          <span class="eyebrow">Presets · 氛围预设</span>
+          <button class="save-preset" id="save-preset" hidden>+ 存为预设</button>
+        </div>
+        <div class="pchips" id="pchips" role="group" aria-label="预设"></div>
+      </div>
+
       <div class="mixer empty-hide" id="mixer-wrap">
         <div class="mixer-head">
           <span class="eyebrow">Mix · 混音台</span>
-          <button class="clear" id="clear">Clear</button>
+          <div class="mix-actions">
+            <button class="clear" id="share">Share</button>
+            <button class="clear" id="clear">Clear</button>
+          </div>
         </div>
         <div id="mixer"></div>
       </div>
@@ -227,6 +276,8 @@
       </div>
     </section>
   </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
 (() => {
@@ -282,7 +333,7 @@
   const byId = id => SOUNDS.find(s => s.id === id);
 
   // ---------- 音频引擎 ----------
-  let ctx=null, master=null, analyser=null, freqData=null, reverb=null, reverbBus=null;
+  let ctx=null, master=null, reverb=null, reverbBus=null;
   const buffers = {};
   const layers = new Map();
   const AUDIO_BASE = 'audio/';
@@ -316,58 +367,88 @@
     if (ctx) return;
     ctx = new (window.AudioContext || window.webkitAudioContext)();
     master = ctx.createGain(); master.gain.value = 0;
-    analyser = ctx.createAnalyser(); analyser.fftSize = 256; freqData = new Uint8Array(analyser.frequencyBinCount);
-    master.connect(analyser); master.connect(ctx.destination);
+    master.connect(ctx.destination);
     reverb = ctx.createConvolver(); reverb.buffer = makeImpulse(2.4, 2.6);
     const wet = ctx.createGain(); wet.gain.value = 0.9;
     reverbBus = ctx.createGain(); reverbBus.gain.value = 1;
     reverbBus.connect(reverb); reverb.connect(wet); wet.connect(master);
     ['white','pink','brown'].forEach(t => buffers[t] = makeNoise(t));
+    setupKeepAlive();
+    setupMediaSession();
   }
 
-  // ---- 真实音频层（<audio> 元素；有音频文件的走这里，没有的回退合成）----
-  function effReal(layer, playing){
-    playing = (playing===undefined) ? masterPlaying : playing;
-    return perc(volOf(layer.id)) * perc(masterVol/100) * 0.9 * (playing ? 1 : 0);
+  // ---- 文件音频缓冲（fetch + decodeAudioData，进入同一 Web Audio 图；失败回退合成）----
+  const fileBuffers = {};      // id -> AudioBuffer
+  const fileState = {};        // id -> 'ok' | 'fail'
+  const filePromises = {};     // id -> Promise（去重并发加载）
+  let fallbackNoticed = false;
+  function loadFileBuffer(cfg){
+    if (fileBuffers[cfg.id]) return Promise.resolve(fileBuffers[cfg.id]);
+    if (fileState[cfg.id]==='fail') return Promise.resolve(null);
+    if (filePromises[cfg.id]) return filePromises[cfg.id];
+    filePromises[cfg.id] = (async () => {
+      try {
+        const resp = await fetch(AUDIO_BASE + cfg.file, { cache:'force-cache' });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const arr = await resp.arrayBuffer();
+        const buf = await ctx.decodeAudioData(arr);
+        fileBuffers[cfg.id] = buf; fileState[cfg.id] = 'ok';
+        return buf;
+      } catch (e) {
+        fileState[cfg.id] = 'fail';
+        return null;               // file:// 或缺文件 → 回退合成
+      } finally { delete filePromises[cfg.id]; }
+    })();
+    return filePromises[cfg.id];
   }
-  function rampEl(layer, to, ms){
-    if (layer.rampTimer) clearInterval(layer.rampTimer);
-    const from = layer.el.volume, steps = Math.max(1, Math.round(ms/30)); let i=0;
-    layer.rampTimer = setInterval(() => { i++; const v = from + (to-from)*(i/steps);
-      layer.el.volume = Math.max(0, Math.min(1, v));
-      if (i>=steps){ clearInterval(layer.rampTimer); layer.rampTimer=0; } }, 30);
+  function notifyFallback(){
+    if (fallbackNoticed) return; fallbackNoticed = true;
+    toast('本地直开模式 · 部分声音改用合成');
   }
-  function startRealSceneEvents(layer){
-    const id = layer.id;
-    if (id!=='storm' && id!=='birds' && id!=='forest') return;
+
+  // 文件层的场景视觉（录音已含雷声/鸟鸣，这里只驱动画面、不再叠加合成事件）
+  function wireSceneEmitters(layer, cfg){
+    if (!cfg.thunder && !cfg.birds) return;
     const emit = () => {
       if (!layer.active) return;
-      if (masterPlaying){ if (id==='storm') scene.lightning(); else scene.spark(layer.cfg.color); }
-      const d = id==='storm' ? (8000+rand()*17000) : id==='birds' ? (1500+rand()*3000) : (6000+rand()*10000);
+      if (masterPlaying){ if (cfg.thunder) scene.lightning(); else scene.spark(cfg.color); }
+      const d = cfg.thunder ? (8000+rand()*17000)
+              : cfg.birds==='high' ? (1500+rand()*3000)
+              : (6000+rand()*10000);
       layer.sceneTimer = setTimeout(emit, d);
     };
     layer.sceneTimer = setTimeout(emit, 1500);
   }
-  function buildRealLayer(cfg){
-    const layer = { id:cfg.id, cfg, real:true, active:true, sceneTimer:0, rampTimer:0 };
-    const el = new Audio(AUDIO_BASE + cfg.file); el.loop = true; el.preload = 'auto'; el.volume = 0;
-    layer.el = el;
-    const p = el.play(); if (p && p.catch) p.catch(()=>{});
-    rampEl(layer, effReal(layer), 800);
-    startRealSceneEvents(layer);
-    return layer;
-  }
-  function teardownReal(layer){
-    if (layer.sceneTimer) clearTimeout(layer.sceneTimer);
-    if (layer.rampTimer) clearInterval(layer.rampTimer);
-    try{ layer.el.pause(); }catch(e){}
-    layer.el.removeAttribute('src'); try{ layer.el.load(); }catch(e){}
-  }
 
   function buildLayer(cfg){
-    if (cfg.file) return buildRealLayer(cfg);
-    const layer = { id:cfg.id, cfg, active:true, thunderTimer:0, birdTimer:0, extra:[], filters:[] };
+    const layer = { id:cfg.id, cfg, active:true, extra:[], filters:[] };
     const gain = ctx.createGain(); gain.gain.value = 0; layer.gain = gain;
+    gain.connect(master);
+    if (cfg.reverb){ const sg=ctx.createGain(); sg.gain.value=cfg.reverb; gain.connect(sg); sg.connect(reverbBus); layer.extra.push(sg); }
+    if (cfg.file){
+      loadFileBuffer(cfg).then(buf => {
+        if (!layer.active) return;                     // 加载期间已被移除
+        if (buf){ wireBufferSource(layer, buf); wireSceneEmitters(layer, cfg); }
+        else { wireSynth(layer, cfg); wireSynthEvents(layer, cfg); notifyFallback(); }
+        fadeInLayer(layer);
+      });
+    } else {
+      wireSynth(layer, cfg); wireSynthEvents(layer, cfg); fadeInLayer(layer);
+    }
+    return layer;
+  }
+  function fadeInLayer(layer){
+    const now = ctx.currentTime;
+    layer.gain.gain.cancelScheduledValues(now);
+    layer.gain.gain.setValueAtTime(0.0001, now);
+    layer.gain.gain.linearRampToValueAtTime(layerTarget(layer.id), now + 0.8);
+  }
+  function wireBufferSource(layer, buf){
+    const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true; layer.src = src;
+    src.connect(layer.gain); src.start();       // 录音保持原声，仅走 gain + 混响总线
+  }
+  function wireSynth(layer, cfg){
+    const gain = layer.gain;
     if (cfg.base){
       const src = ctx.createBufferSource(); src.buffer = buffers[cfg.base]; src.loop = true; layer.src = src;
       let node = src;
@@ -381,19 +462,16 @@
       src.start();
     }
     if (cfg.bowl) buildBowl(layer, cfg.bowl);
-    gain.connect(master);
-    if (cfg.reverb){ const sg=ctx.createGain(); sg.gain.value=cfg.reverb; gain.connect(sg); sg.connect(reverbBus); layer.extra.push(sg); }
+  }
+  function wireSynthEvents(layer, cfg){
     if (cfg.thunder) scheduleThunder(layer);
     if (cfg.birds) scheduleBirds(layer, cfg.birds);
     if (cfg.crackle) scheduleCrackle(layer);
     if (cfg.clink) scheduleClink(layer);
     if (cfg.clack) scheduleClack(layer);
     if (cfg.bowl) scheduleStrike(layer, cfg.bowl);
-    const now = ctx.currentTime;
-    gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(layerTarget(cfg.id), now + 0.8);
-    return layer;
   }
-  function stopTimers(layer){ ['thunderTimer','birdTimer','crackleTimer','clinkTimer','clackTimer','strikeTimer'].forEach(k => { if (layer[k]) clearTimeout(layer[k]); }); }
+  function stopTimers(layer){ ['thunderTimer','birdTimer','crackleTimer','clinkTimer','clackTimer','strikeTimer','sceneTimer'].forEach(k => { if (layer[k]) clearTimeout(layer[k]); }); }
   function teardownLayer(layer){
     [layer.src, layer.lfo, layer.tone].forEach(n => { if (n){ try{ n.stop(); }catch(e){} } });
     if (layer.src) try{ layer.src.disconnect(); }catch(e){}
@@ -512,24 +590,150 @@
   function setPlaying(on){
     masterPlaying = on;
     if (ctx) rampMaster(on?masterTarget():0, 0.4);
-    layers.forEach(l => { if (l.real){ if (on){ const p=l.el.play(); if (p&&p.catch) p.catch(()=>{}); } rampEl(l, effReal(l, on), 400); if (!on) setTimeout(() => { if (!masterPlaying){ try{ l.el.pause(); }catch(e){} } }, 430); } });
     reflectPlay();
+    updateMediaSession();
   }
 
-  async function toggleSound(id){
-    ensureCtx(); if (ctx.state==='suspended') ctx.resume();
-    if (layers.has(id)){
-      const layer = layers.get(id); layer.active=false;
-      if (layer.real){ if (layer.sceneTimer) clearTimeout(layer.sceneTimer); rampEl(layer, 0, 600); setTimeout(() => teardownReal(layer), 650); }
-      else { stopTimers(layer); const now = ctx.currentTime; layer.gain.gain.cancelScheduledValues(now); layer.gain.gain.setValueAtTime(layer.gain.gain.value, now); layer.gain.gain.linearRampToValueAtTime(0, now+0.6); setTimeout(() => teardownLayer(layer), 700); }
-      layers.delete(id);
-    } else { layers.set(id, buildLayer(byId(id))); if (!masterPlaying) setPlaying(true); }
-    reflectChips(); renderMixer(); reflectState();
+  function removeLayer(id, fade){
+    const layer = layers.get(id); if (!layer) return;
+    layer.active = false; stopTimers(layer);
+    if (layer.gain && ctx){ const now = ctx.currentTime; layer.gain.gain.cancelScheduledValues(now); layer.gain.gain.setValueAtTime(Math.max(layer.gain.gain.value,0.0001), now); layer.gain.gain.linearRampToValueAtTime(0.0001, now + (fade?0.6:0.14)); }
+    setTimeout(() => teardownLayer(layer), fade?700:180);
+    layers.delete(id);
   }
-  function toggleMaster(){ if (layers.size===0){ nudge(); return; } ensureCtx(); if (masterPlaying) setPlaying(false); else { if (ctx.state==='suspended') ctx.resume(); setPlaying(true); } reflectState(); }
-  function clearAll(){ [...layers.keys()].forEach(id => { const l=layers.get(id); l.active=false; if (l.real){ if (l.sceneTimer) clearTimeout(l.sceneTimer); teardownReal(l); } else { stopTimers(l); teardownLayer(l); } layers.delete(id); }); setPlaying(false); reflectChips(); renderMixer(); reflectState(); cancelTimer(); setTimerChips('off'); }
-  function setLayerVol(id, v){ soundVol[id]=v/100; localStorage.setItem('lull.svol', JSON.stringify(soundVol)); const l=layers.get(id); if (!l) return; if (l.real){ rampEl(l, effReal(l), 120); } else { const now=ctx.currentTime; l.gain.gain.cancelScheduledValues(now); l.gain.gain.setValueAtTime(l.gain.gain.value, now); l.gain.gain.linearRampToValueAtTime(layerTarget(id), now+0.12); } }
-  function setMasterVol(v){ masterVol=v; localStorage.setItem('lull.mvol', String(v)); $('vol-val').textContent=v; $('vol').style.setProperty('--fill', v+'%'); if (masterPlaying && ctx) rampMaster(masterTarget(), 0.15); layers.forEach(l => { if (l.real) rampEl(l, effReal(l), 150); }); }
+  function toggleSound(id){
+    ensureCtx(); if (ctx.state==='suspended') ctx.resume();
+    if (layers.has(id)) removeLayer(id, true);
+    else { layers.set(id, buildLayer(byId(id))); if (!masterPlaying) setPlaying(true); }
+    reflectChips(); renderMixer(); reflectState(); persistMix(); updateMediaSession();
+  }
+  function toggleMaster(){
+    if (layers.size===0){ if (pendingMix){ const m=pendingMix; pendingMix=null; loadMix(m, true); return; } nudge(); return; }
+    ensureCtx(); if (masterPlaying) setPlaying(false); else { if (ctx.state==='suspended') ctx.resume(); setPlaying(true); } reflectState();
+  }
+  function clearAll(){ [...layers.keys()].forEach(id => removeLayer(id, false)); setPlaying(false); reflectChips(); renderMixer(); reflectState(); cancelTimer(); setTimerChips('off'); persistMix(); updateMediaSession(); }
+  function setLayerVol(id, v){ soundVol[id]=v/100; localStorage.setItem('lull.svol', JSON.stringify(soundVol)); const l=layers.get(id); if (l && l.gain && ctx){ const now=ctx.currentTime; l.gain.gain.cancelScheduledValues(now); l.gain.gain.setValueAtTime(Math.max(l.gain.gain.value,0.0001), now); l.gain.gain.linearRampToValueAtTime(layerTarget(id), now+0.12); } persistMixSoon(); }
+  function setMasterVol(v){ masterVol=v; localStorage.setItem('lull.mvol', String(v)); $('vol-val').textContent=v; $('vol').style.setProperty('--fill', v+'%'); if (masterPlaying && ctx) rampMaster(masterTarget(), 0.15); }
+
+  // ---------- 混音持久化 · 会话恢复 · URL 分享（F-5 / F-8）----------
+  function currentMix(){ const m={}; layers.forEach((l,id)=>{ m[id]=Math.round(volOf(id)*100); }); return m; }
+  function mixToHash(mix){ return Object.keys(mix).map(id=>id+'='+mix[id]).join('&'); }
+  let pendingMix=null, persistT=0;
+  function persistMix(){
+    const ids=[...layers.keys()];
+    localStorage.setItem('lull.mix', JSON.stringify(ids));
+    const hash = mixToHash(currentMix());
+    try{ history.replaceState(null,'', hash ? '#'+hash : location.pathname+location.search); }catch(e){}
+    $('save-preset').hidden = ids.length===0;
+    reflectResume();
+  }
+  function persistMixSoon(){ clearTimeout(persistT); persistT=setTimeout(persistMix, 320); }
+  function parseMixHash(){
+    const h=location.hash.replace(/^#/,''); if (!h) return null;
+    const mix={}; h.split('&').forEach(p=>{ const [k,v]=p.split('='); if (byId(k)){ const n=parseInt(v,10); mix[k]=isNaN(n)?60:Math.max(0,Math.min(100,n)); } });
+    return Object.keys(mix).length ? mix : null;
+  }
+  function loadMix(mix, play){
+    ensureCtx(); if (ctx.state==='suspended') ctx.resume();
+    const ids=Object.keys(mix);
+    [...layers.keys()].forEach(id=>{ if (!(id in mix)) removeLayer(id, true); });
+    ids.forEach(id=>{ soundVol[id]=(mix[id]|0)/100; });
+    localStorage.setItem('lull.svol', JSON.stringify(soundVol));
+    ids.forEach(id=>{ if (layers.has(id)) setLayerVol(id, mix[id]); else layers.set(id, buildLayer(byId(id))); });
+    if (play){ if (!masterPlaying) setPlaying(true); else if (ctx) rampMaster(masterTarget(), 0.3); }
+    reflectChips(); renderMixer(); reflectState(); persistMix(); updateMediaSession();
+  }
+  function reflectResume(){
+    const btn=$('resume');
+    if (pendingMix && layers.size===0){
+      const names=Object.keys(pendingMix).map(id=>byId(id)&&byId(id).name).filter(Boolean).slice(0,4).join(' · ');
+      btn.textContent='继续上次 · '+names; btn.hidden=false;
+    } else btn.hidden=true;
+  }
+  function initRestore(){
+    pendingMix = parseMixHash();
+    if (!pendingMix){
+      try{ const ids=JSON.parse(localStorage.getItem('lull.mix')||'[]'); if (ids.length){ const m={}; ids.forEach(id=>{ if (byId(id)) m[id]=Math.round(volOf(id)*100); }); if (Object.keys(m).length) pendingMix=m; } }catch(e){}
+    }
+    reflectResume();
+  }
+  function shareMix(){
+    const mix=currentMix(); if (!Object.keys(mix).length){ toast('先挑一些声音再分享'); return; }
+    const url=location.origin+location.pathname+'#'+mixToHash(mix);
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(()=>toast('混音链接已复制'), ()=>toast('复制失败 · 可手动复制地址栏'));
+    else toast('可复制地址栏链接分享');
+  }
+
+  // ---------- 预设（F-4）----------
+  const BUILTIN_PRESETS = [
+    { id:'rainynight',    name:'雨夜', mix:{ hrain:62, storm:34, wind:22 } },
+    { id:'morningforest', name:'晨林', mix:{ forest:60, birds:48, breeze:30 } },
+    { id:'seaside',       name:'海边', mix:{ ocean:72, breeze:32, birds:18 } },
+    { id:'fireside',      name:'炉边', mix:{ fire:70, wind:24, lrain:24 } },
+    { id:'traincabin',    name:'车厢', mix:{ train:60, hrain:30, hum:22 } },
+    { id:'deepspace',     name:'深空', mix:{ brown:60, hum:34 } },
+  ];
+  function customPresets(){ try{ return JSON.parse(localStorage.getItem('lull.presets')||'[]'); }catch(e){ return []; } }
+  function saveCustomPresets(a){ localStorage.setItem('lull.presets', JSON.stringify(a)); }
+  function renderPresets(){
+    const box=$('pchips'); box.innerHTML='';
+    const add=(p, custom)=>{
+      const b=document.createElement('button'); b.className='pchip'+(custom?' custom':''); b.textContent=p.name; b.title='切到「'+p.name+'」';
+      b.addEventListener('click', ()=>{ loadMix(p.mix, true); toast('已切到「'+p.name+'」'); });
+      if (custom){ const x=document.createElement('span'); x.className='del'; x.setAttribute('role','button'); x.setAttribute('aria-label','删除预设 '+p.name); x.textContent='×';
+        x.addEventListener('click', e=>{ e.stopPropagation(); saveCustomPresets(customPresets().filter(q=>q.id!==p.id)); renderPresets(); }); b.appendChild(x); }
+      box.appendChild(b);
+    };
+    BUILTIN_PRESETS.forEach(p=>add(p,false));
+    customPresets().forEach(p=>add(p,true));
+  }
+  function saveCurrentAsPreset(){
+    const mix=currentMix(); if (!Object.keys(mix).length){ toast('先挑一些声音'); return; }
+    const arr=customPresets(); if (arr.length>=12){ toast('自定义预设已满（上限 12）'); return; }
+    const def='预设 '+(arr.length+1); let name=def;
+    try{ const r=prompt('给这个混音起个名字', def); if (r===null) return; name=(r||def).trim().slice(0,16)||def; }catch(e){}
+    arr.push({ id:'c'+Date.now(), name, mix }); saveCustomPresets(arr); renderPresets(); toast('已存为「'+name+'」');
+  }
+
+  // ---------- 锁屏存活：Media Session + 保活（F-2）----------
+  let keepEl=null;
+  function silentWavUrl(){
+    const rate=8000, len=rate, buf=new ArrayBuffer(44+len*2), v=new DataView(buf);
+    const ws=(o,s)=>{ for(let i=0;i<s.length;i++) v.setUint8(o+i, s.charCodeAt(i)); };
+    ws(0,'RIFF'); v.setUint32(4,36+len*2,true); ws(8,'WAVE'); ws(12,'fmt '); v.setUint32(16,16,true);
+    v.setUint16(20,1,true); v.setUint16(22,1,true); v.setUint32(24,rate,true); v.setUint32(28,rate*2,true);
+    v.setUint16(32,2,true); v.setUint16(34,16,true); ws(36,'data'); v.setUint32(40,len*2,true);
+    return URL.createObjectURL(new Blob([buf],{type:'audio/wav'}));
+  }
+  function setupKeepAlive(){ if (keepEl) return; try{ keepEl=new Audio(silentWavUrl()); keepEl.loop=true; keepEl.preload='auto'; keepEl.setAttribute('playsinline',''); keepEl.volume=1; }catch(e){ keepEl=null; } }
+  function keepAlive(on){ if (!keepEl) return; if (on){ const p=keepEl.play(); if (p&&p.catch) p.catch(()=>{}); } else { try{ keepEl.pause(); }catch(e){} } }
+  function setupMediaSession(){
+    if (!('mediaSession' in navigator)) return;
+    try{
+      navigator.mediaSession.setActionHandler('play', ()=>{ if (layers.size){ ensureCtx(); if (ctx.state==='suspended') ctx.resume(); setPlaying(true); reflectState(); } });
+      navigator.mediaSession.setActionHandler('pause', ()=>{ setPlaying(false); reflectState(); });
+      navigator.mediaSession.setActionHandler('stop', ()=>{ setPlaying(false); reflectState(); });
+    }catch(e){}
+  }
+  function updateMediaSession(){
+    if (!('mediaSession' in navigator)) return;
+    keepAlive(masterPlaying);
+    try{
+      navigator.mediaSession.playbackState = masterPlaying?'playing':'paused';
+      const ids=[...layers.keys()];
+      const title = ids.length===0 ? 'Lull · 声音气象台'
+                  : ids.length===1 ? (POEMS[ids[0]]||byId(ids[0]).name)
+                  : ids.map(i=>byId(i).name).join(' · ');
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title, artist:'Lull · 声音气象台', album:'Atmospheres',
+        artwork:[{src:'icons/icon-192.png',sizes:'192x192',type:'image/png'},{src:'icons/icon-512.png',sizes:'512x512',type:'image/png'}]
+      });
+    }catch(e){}
+  }
+
+  // ---------- toast ----------
+  let toastT=0;
+  function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'), 2600); }
 
   // ---------- UI ----------
   let flashT=0;
@@ -597,22 +801,25 @@
     timerEnd = Date.now() + mins*60000;
     timerTick = setInterval(() => { const left = timerEnd - Date.now();
       if (left<=0){ cancelTimer(); setTimerChips('off'); setPlaying(false); reflectState(); return; }
-      if (left<=20000 && masterPlaying && !timerFading){ timerFading=true; if (ctx) rampMaster(0, left/1000); layers.forEach(l => { if (l.real) rampEl(l, 0, left); }); }
+      if (left<=20000 && masterPlaying && !timerFading){ timerFading=true; if (ctx) rampMaster(0, left/1000); }
       const s=Math.ceil(left/1000), m=Math.floor(s/60), ss=String(s%60).padStart(2,'0'); $('countdown').textContent = m+':'+ss;
     }, 250);
   }
   const TIMERS = [['off','关'],['15','15'],['30','30'],['45','45'],['60','60'],['90','90']];
   TIMERS.forEach(([id,label]) => { const b=document.createElement('button'); b.className='tchip'; b.dataset.id=id; b.setAttribute('aria-pressed', String(id==='off')); b.textContent=label; b.addEventListener('click', () => setTimer(id==='off'?0:parseInt(id,10), id)); $('timers').appendChild(b); });
 
-  // 时钟
+  // 时钟（页面隐藏时停跳，F-5）
+  let clockTimer=0;
   function tickClock(){
     const d = new Date(), hh = String(d.getHours()).padStart(2,'0'), mm = String(d.getMinutes()).padStart(2,'0'), ss = String(d.getSeconds()).padStart(2,'0');
     $('clock').innerHTML = hh+':'+mm+'<span class="sec">'+ss+'</span>';
     const wd = ['周日','周一','周二','周三','周四','周五','周六'][d.getDay()];
     $('datemeta').textContent = (d.getMonth()+1)+'月'+d.getDate()+'日 · '+wd;
-    setTimeout(tickClock, 1000 - (Date.now()%1000));
+    clockTimer = setTimeout(tickClock, 1000 - (Date.now()%1000));
   }
-  tickClock();
+  function startClock(){ if (clockTimer) return; tickClock(); }
+  function stopClock(){ if (clockTimer){ clearTimeout(clockTimer); clockTimer=0; } }
+  startClock();
 
   // ---------- 生成式场景 ----------
   const scene = (() => {
@@ -621,6 +828,10 @@
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const stars=[], rainP=[], windP=[], motes=[], sparks=[], flashes=[], emberP=[], bokehP=[], railP=[], ripples=[];
     let oceanPhase=0;
+    // 帧率自适应 + 后台停画（F-2 / F-5）
+    let running=true, frameReq=0, lastFrame=0;
+    const FAST = new Set(['rain','fire','birds','grain','wind','rail','ocean']);
+    function hasFast(){ if (!masterPlaying) return false; for (const id of layers.keys()){ if (FAST.has(byId(id).paint)) return true; } return false; }
 
     function hexToRgb(h){ h=h.replace('#',''); return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]; }
     function themeVar(name){ return getComputedStyle(root).getPropertyValue(name).trim(); }
@@ -649,6 +860,10 @@
     }
 
     function draw(now){
+      if (!running || document.hidden){ running=false; frameReq=0; return; }        // 后台：停画（音频调度继续）
+      const minInt = hasFast() ? 0 : 33;                                              // 无高频动效 → 降至 ~30fps
+      if (now - lastFrame < minInt){ frameReq=requestAnimationFrame(draw); return; }
+      lastFrame = now;
       const dt = Math.min(0.05, (now-lastT)/1000); lastT = now;
       const dark = curTheme()==='dark';
       // 背景
@@ -700,7 +915,7 @@
       vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1, dark?'rgba(0,0,0,0.42)':'rgba(20,40,36,0.10)');
       g.fillStyle=vg; g.fillRect(0,0,W,H);
 
-      requestAnimationFrame(draw);
+      frameReq = requestAnimationFrame(draw);
     }
 
     function drawAurora(now, alpha){
@@ -793,20 +1008,46 @@
       g.globalAlpha=1;
     }
 
-    addEventListener('resize', resize); resize(); requestAnimationFrame(draw);
+    function clearFX(){ sparks.length=0; flashes.length=0; ripples.length=0; }
+    function pause(){ running=false; if (frameReq) cancelAnimationFrame(frameReq); frameReq=0; clearFX(); }
+    function resume(){ if (running) return; running=true; lastT=performance.now(); lastFrame=0; frameReq=requestAnimationFrame(draw); }
+
+    addEventListener('resize', resize); resize(); frameReq=requestAnimationFrame(draw);
     return {
-      spark(color){ sparks.push({x: W*(0.2+rand()*0.6), y: H*(0.25+rand()*0.35), age:0, life:1.1+rand()*0.5, color}); },
-      lightning(){ flashes.push({age:0, life:0.55}); },
-      ember(color){ sparks.push({x: W*(0.34+rand()*0.32), y: H*(0.80+rand()*0.1), age:0, life:0.8+rand()*0.5, color}); },
-      ripple(color){ ripples.push({age:0, life:5.5, color}); },
+      pause, resume, clear:clearFX,
+      spark(color){ if (!running||document.hidden) return; sparks.push({x: W*(0.2+rand()*0.6), y: H*(0.25+rand()*0.35), age:0, life:1.1+rand()*0.5, color}); },
+      lightning(){ if (!running||document.hidden) return; flashes.push({age:0, life:0.55}); },
+      ember(color){ if (!running||document.hidden) return; sparks.push({x: W*(0.34+rand()*0.32), y: H*(0.80+rand()*0.1), age:0, life:0.8+rand()*0.5, color}); },
+      ripple(color){ if (!running||document.hidden) return; ripples.push({age:0, life:5.5, color}); },
     };
   })();
 
   // ---------- 事件 & 初始化 ----------
   $('play').addEventListener('click', toggleMaster);
   $('clear').addEventListener('click', clearAll);
+  $('share').addEventListener('click', shareMix);
+  $('save-preset').addEventListener('click', saveCurrentAsPreset);
+  $('resume').addEventListener('click', () => { if (pendingMix){ const m=pendingMix; pendingMix=null; loadMix(m, true); } });
   const volEl = $('vol'); volEl.value = masterVol; volEl.addEventListener('input', e => setMasterVol(parseInt(e.target.value,10)));
-  setMasterVol(masterVol); renderTabs(); renderChips(); renderMixer(); reflectPlay(); reflectState();
+
+  // 可见性：后台省电（停画/停钟），回前台恢复音频与画面（F-2 / F-5）
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden){ scene.pause(); stopClock(); }
+    else {
+      if (ctx && masterPlaying && ctx.state==='suspended') ctx.resume();
+      if (masterPlaying) keepAlive(true);
+      scene.resume(); startClock();
+    }
+  });
+  window.addEventListener('pageshow', () => { if (ctx && masterPlaying && ctx.state==='suspended') ctx.resume(); });
+
+  setMasterVol(masterVol); renderTabs(); renderChips(); renderMixer(); renderPresets(); reflectPlay(); reflectState();
+  initRestore();
+
+  // PWA：仅 http(s) 下注册 Service Worker（file:// 直开无需，见 README）
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')){
+    window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+  }
 })();
 </script>
 </body>
