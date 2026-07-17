@@ -1,0 +1,12 @@
+{
+  "name": "lull",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Lull · 声音气象台 — 白噪音 + 生成式场景混音器",
+  "scripts": {
+    "dev": "vite"
+  },
+  "devDependencies": {
+    "vite": "^8.1.5"
+  }
+}
