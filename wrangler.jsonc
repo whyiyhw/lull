@@ -1,0 +1,17 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  // Lull · 纯静态 PWA。无 Worker 脚本，只把 Vite 产物 dist/ 作为静态资源上边缘。
+  "name": "lull",
+  "compatibility_date": "2026-07-18",
+  "assets": {
+    "directory": "./dist",
+    // dist/ 里 index.html + sw.js + manifest + audio/ + icons/ 都是真实文件；
+    // 应用用 URL hash（#lrain=60）做状态，无客户端路由，未命中路径回落标准 404。
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "none"
+  },
+  // 自定义域：zone whyiyhw.com 已托管在本账号，deploy 时自动建 lull 子域记录并接边缘。
+  "routes": [
+    { "pattern": "lull.whyiyhw.com", "custom_domain": true }
+  ]
+}
