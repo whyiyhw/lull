@@ -54,7 +54,7 @@
 ## 换 / 加音频（零改代码或一行）
 
 1. 把音频文件（`.mp3`）放进 `audio/`，命名为对应 id：`lrain.mp3`、`storm.mp3`、`ocean.mp3`…
-2. 在 `index.html` 的 `SOUNDS` 配置里给该声音加一个字段 `file:'xxx.mp3'` 即可（当前 `forest`/`train`/`cafe` 三个已挂真实录音）。
+2. 在 `src/data.js` 的 `SOUNDS` 配置里给该声音加一个字段 `file:'xxx.mp3'` 即可（当前 `forest`/`train`/`cafe` 三个已挂真实录音）。
 3. 没有 `file` 的声音自动用合成。
 4. 若新增了文件，记得把文件名同步进 `sw.js` 的 `AUDIO` 列表，离线才会缓存到。
 
@@ -68,7 +68,7 @@
 
 ## 技术
 
-- 单文件 `index.html`：内联全部 CSS/JS，系统字体（`ui-serif` / `ui-monospace` / `system-ui`，零外链）。
+- 源码 ES modules（`src/` 下 12 个模块：util/state/data/scene/synth/lockscreen/engine/tuner/ui/timer/immersive/app；加声音改 `data.js`+`synth.js`、加画法改 `scene.js`），Vite 构建把全部 JS/CSS 内联进单个 `index.html`（本地优先·自包含产物不变），系统字体（`ui-serif` / `ui-monospace` / `system-ui`，零外链）。
 - 音频：Web Audio 统一图 —— 合成层（BufferSource 噪声 + BiquadFilter + LFO + ConvolverNode 混响；雷/鸟/篝火/颂钵用调度器合成）与真实录音层（`decodeAudioData` → `AudioBufferSourceNode`）共用 gain / 混响 / 主总线。
 - 锁屏：Media Session API + 静音 WAV 保活元素（与 `mediaSession` 特性检测解耦）+ `AudioContext.onstatechange`/保活元素 `pause` 自愈中断（D7）+ `visibilitychange`/`pageshow` 兜底。停播即冻结事件调度器（各 `schedule*` 的 `setTimeout` 链）、0.9s 后 `ctx.suspend()` 挂起 DSP，恢复播放再按层重启——引擎不空转（D8）。
 - 场景：单 `<canvas>`，按各声音实时音量聚合「气象强度」逐帧作画；后台停画、无高频动效降帧；粒子数按屏面积缩放（设上限）。

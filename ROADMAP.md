@@ -28,25 +28,25 @@
 - **阻塞于**：仓库当前**无 git 远端**。需 ① 建 GitHub 远端并 push；② Settings→Pages→Source 选「GitHub Actions」。
 - **产出**：真实 URL → 可装主屏离线用 → 才能收 issue 反馈（PRD 成功度量靠这个）。
 
-### 收口-6 · D10 拆 ES modules ⬜（**建议在收口-1 通过后再动**）
-- **为什么不现在做**：这是碰全量代码（含 sleep-critical 音频路径）的大重构。在**未经真机验证的基线**上叠大重构，只会把验收面撑大、把「过夜才暴露」的回归引进来。正确顺序：先用当前 D8-fixed 的干净构建过真机 → 基线可信 → 再重构。
-- **已就绪**：Vite ESM 管线 + 单文件产物（`index.html` 已 `<script type="module" src="/src/app.js">`）。拆分是纯源码组织，产物仍自包含。
-- **建议模块边界**（app.js 1300+ 行 → 约 10 个模块）：
-  | 模块 | 内容 | 依赖 |
+### 收口-6 · D10 拆 ES modules ✅（2026-07-18）
+- **已完成**：1276 行单 IIFE → 12 个扁平模块（产物仍是自包含单文件，`pnpm build` 内联 16 modules）。共享可变态用 `state.js` 的「live binding + setter」模式解循环依赖：各模块 import 读到的永远是最新值，仅 ctx/master/reverb/reverbBus/masterPlaying/masterVol 的重新赋值走 setter。
+- **实际模块边界**：
+  | 模块 | 行 | 内容 |
   |---|---|---|
-  | `data.js` | CATS/SOUNDS/byId、*_SPECIES、VARIANT_PICKERS、BUILTIN_PRESETS、POEMS、TIMERS（纯数据） | 无 |
-  | `audio/state.js` | 共享可变态：ctx/master/reverb/buffers/layers/masterPlaying 的 get/set（打破循环依赖的关键） | 无 |
-  | `audio/engine.js` | ensureCtx、makeNoise/Impulse、buildLayer、wireSynth、setPlaying、freeze/wake、removeLayer、toggleSound/Master、clearAll、音量 | state, data, scene, synth-events |
-  | `audio/synth-events.js` | 所有 schedule*/trigger*（雷/鸟/虫/篝火/咖啡/火车/滴答/翻书/颂钵） | state, scene |
-  | `audio/lockscreen.js` | keepAlive、mediaSession、attemptRecover、silentWav | state |
-  | `tuner.js` | 拨盘/频道/预设 CRUD | engine, mix, data |
-  | `mix.js` | 持久化/会话恢复/URL 分享 | engine, data |
-  | `scene.js` | 生成式场景（现 IIFE → 导出 scene 对象 + init） | state, data |
-  | `immersive.js` | Wake Lock、沉浸态、全屏、入睡调光、快捷键 | engine, tuner |
-  | `ui.js` | reflect*/render*、子选择器 UI、toast、时钟、定时 | engine, tuner, mix, data |
-  | `main.js` | 组装 + 初始化（现入口） | all |
-- **迁移策略**：先抽纯数据（`data.js`，零风险）→ 抽 `scene.js`（自成一体）→ 抽 `audio/*`（用 `state.js` 解循环）→ 最后 `ui/tuner/immersive/main`。每抽一块跑一次验证门。
-- **验证门（回归保护）**：`pnpm build` 通过 + headless boot（8 tab 等渲染）+ D8 setTimeout churn 测试（14→2→13）+ 鸟鸣截图无报错。全绿才算等价。测试脚手架见 `scratchpad/d8-test.mjs`（可移入 repo）。
+  | `util.js` | 5 | $ / rand / root / curTheme |
+  | `state.js` | 24 | 共享态：ctx/master/reverb/buffers/layers/masterPlaying/masterVol + setter + 音量助手 |
+  | `data.js` | 125 | CATS/SOUNDS/byId、*_SPECIES、VARIANT_PICKERS、变体助手、BUILTIN_PRESETS、POEMS、TIMERS、stationLine |
+  | `scene.js` | 236 | 生成式场景（自成一体单例，import 即起 rAF） |
+  | `synth.js` | 285 | 事件调度器 + 音节合成 + buildBowl + wireSceneEmitters |
+  | `lockscreen.js` | 59 | keepAlive + mediaSession + 中断自愈 |
+  | `engine.js` | 249 | 音频图、层生命周期、播放控制（含 D8 freeze/wake）、混音持久化/分享 |
+  | `tuner.js` | 148 | 拨盘/频道/预设 CRUD/扫台嘶声 |
+  | `ui.js` | 106 | toast/reflect*/render 混音台+格子+子选择器 |
+  | `timer.js` | 52 | 睡眠定时 + 时钟 + 入睡调光 |
+  | `immersive.js` | 63 | Wake Lock + 沉浸态 + 全屏 + 快捷键 |
+  | `app.js` | 53 | 入口：主题、监听装配、初始化、SW |
+- **加东西现在改哪**：加声音 → `data.js`(+`synth.js` 若需声部)；加画法 → `scene.js`；加频道 → `data.js` 的 BUILTIN_PRESETS。
+- **验证门（全绿）**：`pnpm build` ✓；headless 综合回归（`scratchpad/split-test.mjs`）——boot 8 tab/6 定时/7 频道/3 格子；D8 churn 12→2→10；深链路（频道加载 3 层 + lit、鸟种 5 chip、雨质地、定时倒计时、主题/分享/存频道/清空）全过；**0 控制台报错**。等价性确立。
 
 ---
 
@@ -81,5 +81,5 @@
 
 ## 建议顺序
 1. **收口-1 真机验收**（+ 收口-2 的 D8 真机功耗）——否则一切 done 不作数。
-2. **收口-5 部署 → 收口-6 拆模块**——拿到真实 URL 和反馈回路；在可信基线上重构。
+2. **收口-5 部署上线**——建 GitHub 远端 + push，拿到真实 URL 和反馈回路。（收口-6 拆模块已完成 ✅）
 3. **挑一个放大差异化的新方向**——首选 A 整夜生成式漂移 或 B 真实录音补齐。
