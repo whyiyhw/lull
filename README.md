@@ -14,7 +14,22 @@
   pnpm install
   pnpm dev        # → http://localhost:5173
   ```
-  或把整个目录部署到任意静态服务器 / GitHub Pages。浏览器地址栏会出现「安装」入口，装到主屏后可离线冷启动。
+  或把构建产物 `dist/` 部署到任意静态服务器（本项目走 **Cloudflare Workers 静态资源**，见下方「部署」）。浏览器地址栏会出现「安装」入口，装到主屏后可离线冷启动。
+
+## 部署（Cloudflare）
+
+线上：**https://lull.whyiyhw.com** —— Cloudflare Workers 静态资源托管。
+
+纯静态站，产物即 `dist/`（`vite build` 把全部 JS/CSS 内联进单个 `index.html` + `public/` 运行时资源）。部署配置见 `wrangler.jsonc`：`assets.directory` 指向 `dist/`，`routes` 绑自定义域 `lull.whyiyhw.com`。
+
+```bash
+pnpm build            # 生成 dist/
+npx wrangler deploy   # 上传资源 + 更新边缘；首次自动建自定义域 DNS 记录
+```
+
+- 首次需 `npx wrangler login` 登录 Cloudflare 账号。
+- 自定义域要求该域名 zone 已托管在同一 Cloudflare 账号（DNS 记录由 `wrangler deploy` 自动创建）。
+- 也可在 Cloudflare 后台给这个 `lull` Worker 接 GitHub 仓库做自动构建：构建命令 `pnpm build`、部署命令 `npx wrangler deploy`。
 
 ## 功能
 
