@@ -13,6 +13,22 @@
 <link rel="manifest" href="manifest.webmanifest" />
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+
+<!-- 社交分享卡片：微信/QQ/Telegram/Twitter 等靠 og:* 生成缩略图。
+     整站是 canvas，页面无 <img> 可供抓取，故显式给 og:image；必须是绝对 URL 的 ≥300×300 图。 -->
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Lull" />
+<meta property="og:title" content="Lull · 声音电台 · Night FM" />
+<meta property="og:description" content="拧动调频拨盘在夜间频道间穿梭，混音驱动生成式气象，助眠与专注。" />
+<meta property="og:url" content="https://lull.whyiyhw.com/" />
+<meta property="og:image" content="https://lull.whyiyhw.com/icons/icon-512.png" />
+<meta property="og:image:type" content="image/png" />
+<meta property="og:image:width" content="512" />
+<meta property="og:image:height" content="512" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="Lull · 声音电台 · Night FM" />
+<meta name="twitter:description" content="拧动调频拨盘在夜间频道间穿梭，混音驱动生成式气象，助眠与专注。" />
+<meta name="twitter:image" content="https://lull.whyiyhw.com/icons/icon-512.png" />
 <style>
   :root {
     --serif: ui-serif, "New York", "Songti SC", Georgia, "Times New Roman", serif;
