@@ -219,12 +219,16 @@
     if (cfg.file){
       loadFileBuffer(cfg).then(buf => {
         if (!layer.active) return;                     // 加载期间已被移除
-        if (buf){ wireBufferSource(layer, buf); wireSceneEmitters(layer, cfg); }
-        else { wireSynth(layer, cfg); wireSynthEvents(layer, cfg); notifyFallback(); }
+        // 录音层的事件只驱动画面（雷/鸟视觉），合成回退层才有声音事件调度器；两者都存进 wireEvents 以便暂停后重启（D8）
+        if (buf){ wireBufferSource(layer, buf); layer.wireEvents = () => wireSceneEmitters(layer, cfg); }
+        else { wireSynth(layer, cfg); layer.wireEvents = () => wireSynthEvents(layer, cfg); notifyFallback(); }
+        if (masterPlaying) layer.wireEvents();         // D8：仅播放态才启动调度器；暂停态待 wakeSchedulers 唤醒
         fadeInLayer(layer);
       });
     } else {
-      wireSynth(layer, cfg); wireSynthEvents(layer, cfg); fadeInLayer(layer);
+      wireSynth(layer, cfg); layer.wireEvents = () => wireSynthEvents(layer, cfg);
+      if (masterPlaying) layer.wireEvents();
+      fadeInLayer(layer);
     }
     return layer;
   }
@@ -541,8 +545,10 @@
         clearTimeout(suspendT);
         if (ctx.state !== 'running'){ const p=ctx.resume(); if (p&&p.catch) p.catch(()=>{}); }
         rampMaster(masterTarget(), 0.4);
+        wakeSchedulers();                            // D8：恢复播放 → 重启事件调度器
       } else {
         rampMaster(0, 0.4);
+        freezeSchedulers();                          // D8：暂停即冻结事件调度器，timer 不再自我重排空转
         clearTimeout(suspendT);
         suspendT = setTimeout(suspendEngine, 900);   // 渐隐结束后挂起音频图，引擎熄火（D8）
       }
@@ -556,6 +562,9 @@
     if (masterPlaying || !ctx) return;
     if (ctx.state === 'running'){ const p=ctx.suspend(); if (p&&p.catch) p.catch(()=>{}); }
   }
+  // D8：停播时冻结所有层的事件调度器（否则各 schedule* 的 setTimeout 链整夜自我重排、空转烧电）；恢复时按原样重启。
+  function freezeSchedulers(){ layers.forEach(l => stopTimers(l)); }
+  function wakeSchedulers(){ layers.forEach(l => { if (l.active && l.wireEvents){ stopTimers(l); l.wireEvents(); } }); }
 
   function removeLayer(id, fade){
     const layer = layers.get(id); if (!layer) return;
@@ -572,7 +581,10 @@
   }
   function toggleMaster(){
     if (layers.size===0){ if (pendingMix){ const m=pendingMix; pendingMix=null; loadMix(m, true); return; } nudge(); return; }
-    ensureCtx(); if (masterPlaying) setPlaying(false); else { if (ctx.state==='suspended') ctx.resume(); setPlaying(true); } reflectState();
+    ensureCtx();
+    if (masterPlaying){ setPlaying(false); cancelTimer(); setTimerChips('off'); }   // 手动暂停 → 一并取消睡眠定时 + 入睡调光（D11②）
+    else { if (ctx.state==='suspended') ctx.resume(); setPlaying(true); }
+    reflectState();
   }
   function clearAll(){ [...layers.keys()].forEach(id => removeLayer(id, false)); setPlaying(false); reflectChips(); renderMixer(); reflectState(); cancelTimer(); setTimerChips('off'); persistMix(); updateMediaSession(); reflectTuner(); }
   function setLayerVol(id, v){ soundVol[id]=v/100; localStorage.setItem('lull.svol', JSON.stringify(soundVol)); const l=layers.get(id); if (l && l.gain && ctx){ const now=ctx.currentTime; l.gain.gain.cancelScheduledValues(now); l.gain.gain.setValueAtTime(Math.max(l.gain.gain.value,0.0001), now); l.gain.gain.linearRampToValueAtTime(layerTarget(id), now+0.12); } persistMixSoon(); }
@@ -811,8 +823,8 @@
     if (!('mediaSession' in navigator)) return;
     try{
       navigator.mediaSession.setActionHandler('play', ()=>{ if (layers.size){ ensureCtx(); if (ctx.state==='suspended') ctx.resume(); setPlaying(true); reflectState(); } });
-      navigator.mediaSession.setActionHandler('pause', ()=>{ setPlaying(false); reflectState(); });
-      navigator.mediaSession.setActionHandler('stop', ()=>{ setPlaying(false); reflectState(); });
+      navigator.mediaSession.setActionHandler('pause', ()=>{ setPlaying(false); cancelTimer(); setTimerChips('off'); reflectState(); });   // 锁屏暂停同样取消定时（D11②）
+      navigator.mediaSession.setActionHandler('stop', ()=>{ setPlaying(false); cancelTimer(); setTimerChips('off'); reflectState(); });
     }catch(e){}
   }
   function updateMediaSession(){
@@ -972,11 +984,11 @@
     const cv = $('scene'), g = cv.getContext('2d');
     let W=0, H=0, dpr=1, lastT=performance.now();
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const stars=[], rainP=[], windP=[], motes=[], sparks=[], flashes=[], emberP=[], bokehP=[], railP=[], snowP=[], ripples=[];
+    const stars=[], rainP=[], windP=[], motes=[], sparks=[], flashes=[], emberP=[], bokehP=[], railP=[], snowP=[], ripples=[], birdsP=[];
     let oceanPhase=0;
     // 帧率自适应 + 后台停画（F-2 / F-5）
     let running=true, frameReq=0, lastFrame=0;
-    const FAST = new Set(['rain','fire','birds','grain','wind','rail','ocean']);
+    const FAST = new Set(['rain','fire','birds','grain','wind','rail','ocean','snow']);   // snow 是连续粒子系统，应保持满帧（D11③）
     function hasFast(){ if (!masterPlaying) return false; for (const id of layers.keys()){ if (FAST.has(byId(id).paint)) return true; } return false; }
 
     function hexToRgb(h){ h=h.replace('#',''); return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]; }
@@ -996,6 +1008,7 @@
       bokehP.length=0; for (let i=0;i<N(24,1.8);i++) bokehP.push({x:rand()*W, y:rand()*H, r:20+rand()*60, ph:rand()*6.28, dx:(rand()-0.5)*0.15, dy:(rand()-0.5)*0.1});
       railP.length=0; for (let i=0;i<N(40);i++) railP.push({x:rand()*W, y:rand()*H*0.85, len:40+rand()*80, sp:10+rand()*10, o:0.15+rand()*0.4});
       snowP.length=0; for (let i=0;i<N(90,2.6);i++) snowP.push({x:rand()*W, y:rand()*H, r:rand()*1.8+0.7, sp:0.5+rand()*1.1, drift:(rand()-0.5)*0.6, ph:rand()*6.28, a:0.5+rand()*0.5});
+      birdsP.length=0; for (let i=0;i<N(46,1.8);i++) birdsP.push({x:rand()*W, y:rand()*H*0.72, r:rand()*1.5+0.5, sp:0.12+rand()*0.5, dx:(rand()-0.5)*0.5, ph:rand()*6.28});   // 鸟鸣：金色羽尘/光点漂移（D12）
     }
 
     // 各气象强度（依据当前混音 + 音量）
@@ -1049,6 +1062,8 @@
       const ifire = intensity('fire'); if (ifire>0.01) drawFire(ifire, tintOf('fire','#ff9a5a'), now, dt);
       drawRipplesBase(intensity('ripple'), tintOf('ripple','#e6d3a0'), now, dt);
 
+      // 鸟鸣连续画法：金色羽尘缓升 + 灵动闪烁（D12，与密度联动）；事件火花在其上迸发
+      const ibd = intensity('birds'); if (ibd>0.01) drawBirds(ibd, tintOf('birds','#ffd48a'), now, dt);
       // 鸟鸣火花
       for (let i=sparks.length-1;i>=0;i--){ const s=sparks[i]; s.age+=dt; const k=s.age/s.life; if (k>=1){ sparks.splice(i,1); continue; }
         const [r,gg,bb]=hexToRgb(s.color); const a=(1-k); g.globalAlpha=a*0.9; g.fillStyle=`rgba(${r},${gg},${bb},1)`;
@@ -1114,6 +1129,19 @@
           if (p.y>H+4){ p.y=-4; p.x=rand()*W; } if (p.x<-6) p.x=W+6; if (p.x>W+6) p.x=-6; }
         g.globalAlpha=I*0.7*p.a; g.fillStyle=`rgba(${r},${gg},${bb},1)`;
         g.beginPath(); g.arc(p.x,p.y,p.r,0,6.283); g.fill(); }
+      g.globalAlpha=1;
+    }
+    // 鸟鸣：金色羽尘缓缓上升 + 横向轻漂 + 比浮尘更灵动的闪烁（画面是鸟鸣的镜像，D12）
+    function drawBirds(I, col, now, dt){
+      const [r,gg,bb]=hexToRgb(col); const count=Math.floor(birdsP.length*I);
+      for (let i=0;i<count;i++){ const p=birdsP[i];
+        if (!reduce){ p.y -= p.sp*(0.4+I)*(dt*60); p.x += (p.dx + Math.sin(now/1800+p.ph)*0.35)*(dt*60);
+          if (p.y<-6){ p.y=H*0.72+rand()*H*0.28; p.x=rand()*W; } if (p.x<-6) p.x=W+6; if (p.x>W+6) p.x=-6; }
+        const tw=0.4+0.6*Math.sin(now/460+p.ph*2);            // 快而不匀的闪烁 = 鸟鸣的灵动
+        g.globalAlpha=I*0.6*Math.max(0,tw); g.fillStyle=`rgba(${r},${gg},${bb},1)`;
+        g.beginPath(); g.arc(p.x,p.y,p.r,0,6.283); g.fill();
+        g.globalAlpha=I*0.16*Math.max(0,tw); g.beginPath(); g.arc(p.x,p.y,p.r*3.4,0,6.283); g.fill();   // 柔光晕
+      }
       g.globalAlpha=1;
     }
     function drawRain(I, col, dt, dark){
@@ -1236,9 +1264,10 @@
   addEventListener('keydown', e => {
     if (e.metaKey||e.ctrlKey||e.altKey) return;
     const t=e.target, tag=t&&t.tagName, role=t&&t.getAttribute&&t.getAttribute('role');
-    const guarded = tag==='INPUT'||tag==='TEXTAREA'||(t&&t.isContentEditable)||role==='slider';
+    // 焦点在输入控件 / 拨盘 / 任意按钮上时，快捷键不误触发（D11①：F 与 1–6 此前缺 BUTTON 守卫，只有 Space 有）
+    const guarded = tag==='INPUT'||tag==='TEXTAREA'||(t&&t.isContentEditable)||role==='slider'||tag==='BUTTON';
     wake();
-    if (e.key===' '){ if (guarded||tag==='BUTTON') return; e.preventDefault(); toggleMaster(); }
+    if (e.key===' '){ if (guarded) return; e.preventDefault(); toggleMaster(); }
     else if (e.key==='f'||e.key==='F'){ if (guarded) return; e.preventDefault(); toggleFullscreen(); }
     else if (e.key==='Escape'){ exitImmersive(); }
     else if (e.key>='1'&&e.key<='6'){ if (guarded) return; const p=BUILTIN_PRESETS[+e.key-1]; if (p){ tuneTo(p, true); toast('已调到「'+p.name+'」· '+p.fm.toFixed(1)); } }

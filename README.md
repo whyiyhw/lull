@@ -70,7 +70,7 @@
 
 - 单文件 `index.html`：内联全部 CSS/JS，系统字体（`ui-serif` / `ui-monospace` / `system-ui`，零外链）。
 - 音频：Web Audio 统一图 —— 合成层（BufferSource 噪声 + BiquadFilter + LFO + ConvolverNode 混响；雷/鸟/篝火/颂钵用调度器合成）与真实录音层（`decodeAudioData` → `AudioBufferSourceNode`）共用 gain / 混响 / 主总线。
-- 锁屏：Media Session API + 静音 WAV 保活元素（与 `mediaSession` 特性检测解耦）+ `AudioContext.onstatechange`/保活元素 `pause` 自愈中断（D7）+ `visibilitychange`/`pageshow` 兜底。停播 0.9s 后 `ctx.suspend()` 熄火（D8）。
+- 锁屏：Media Session API + 静音 WAV 保活元素（与 `mediaSession` 特性检测解耦）+ `AudioContext.onstatechange`/保活元素 `pause` 自愈中断（D7）+ `visibilitychange`/`pageshow` 兜底。停播即冻结事件调度器（各 `schedule*` 的 `setTimeout` 链）、0.9s 后 `ctx.suspend()` 挂起 DSP，恢复播放再按层重启——引擎不空转（D8）。
 - 场景：单 `<canvas>`，按各声音实时音量聚合「气象强度」逐帧作画；后台停画、无高频动效降帧；粒子数按屏面积缩放（设上限）。
 - 挂机：Screen Wake Lock（仅「播放且可见」持有）+ 8s 空闲隐藏 UI + 全屏 API + 入睡调光遮罩 + 时钟防烧屏漂移。
 - 离线：`sw.js`（壳 network-first、音频/图标 cache-first）+ `manifest.webmanifest`。

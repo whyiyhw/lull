@@ -268,14 +268,14 @@
   :root[data-theme="light"] .dim-veil { background: #223028; }
 
   /* 沉浸挂机态（F-9）：播放中 8s 无交互 → 控制台与光标淡出，仅留场景 + 时钟；任意输入 300ms 内恢复 */
-  header, .console, .mixline { transition: opacity 1s ease, transform 1s ease; }
-  body.waking header, body.waking .console, body.waking .mixline { transition: opacity .22s ease, transform .22s ease; }
+  header, .console, .mixline, .datemeta { transition: opacity 1s ease, transform 1s ease; }
+  body.waking header, body.waking .console, body.waking .mixline, body.waking .datemeta { transition: opacity .22s ease, transform .22s ease; }
   body.immersive { cursor: none; }
   body.immersive header,
   body.immersive .console { opacity: 0; transform: translateY(18px); pointer-events: none; }
   body.immersive .mixline { opacity: 0; }
   body.immersive .clock { font-size: clamp(84px, 20vmin, 340px); }
-  body.immersive .datemeta { color: var(--ink-faint); opacity: .7; }
+  body.immersive .datemeta { opacity: 0; pointer-events: none; }   /* 沉浸态仅留场景 + 时钟（D11④）*/
 
   :focus-visible { outline: 2px solid var(--aurora); outline-offset: 3px; border-radius: 8px; }
   @media (prefers-reduced-motion: reduce) { *:not(#scene) { animation: none !important; transition: none !important; } }
