@@ -54,12 +54,13 @@
 
 ### 方向 A ★ 整夜生成式漂移（电台×生成式双内核的独家玩法）
 把定时后的静态 mix 变成一整夜的声音旅程——别家白噪音 App 做不到。
-- [ ] A1 `audio/drift.js`：定时启动后，对各层目标音量施加极缓慢、有界的调制（周期 ~10–30 min、幅度 ±X%），绝不突变（睡眠优先）。
+- [x] A1 `src/audio/drift.js` ✅（2026-07-18）：定时启动后对各活跃层的 gain 施加极缓慢、有界的调制（每层两条 11–27 min 慢正弦叠加、幅度 ±26%），相位播种使 t0 偏移为 0 → 从用户设定值悄然滑出、绝不突变（睡眠优先）。时钟用 `ctx.currentTime`（暂停即冻结、恢复续算）。只乘 `layerTarget`，不写 `soundVol` → 停止即温柔归位（`stopDrift` 6s 斜坡）。接线：`timer.js` setTimer 起 / cancelTimer 收。**调参旋钮=drift.js 顶部常量**。
 - [ ] A2 可选「换台」：每 ~45–90 min 向相邻「夜间频道」极缓交叉淡化（定义一条 night-journey 频道序列）。
-- [ ] A3 开关 + 持久化（默认：设定时即开？待定）；文案与 Media Session 标题联动。
-- [ ] A4 **必须接入 freeze/wake**：漂移调度器暂停即冻结、恢复即重启，不破坏 D8 熄火。
-- [ ] A5 真机听感终审（不刺醒、无接缝）。
+- [ ] A3 开关 + 持久化：**当前实现=「设定时即开」（无开关）**，是否要显式开关 + 持久化 + Media Session 标题联动待用户拍板。
+- [x] A4 接入 freeze/wake ✅（2026-07-18）：`freezeDrift()`/`wakeDrift()` 挂进 `engine.js` 的 `freezeSchedulers`/`wakeSchedulers`；headless 验证暂停后 12s 内 0 漂移斜坡、活跃定时器回落，D8 熄火不回归。
+- [ ] A5 真机听感终审（不刺醒、无接缝）——**下一步只有用户能做**：设个短定时挂一整夜/快进听，确认摆幅（±26%）、周期（11–27min）、归位是否舒服；不满意直接调 drift.js 顶部常量。
 - 画面自动跟随（canvas 本就是 mix 的镜像），无需额外视觉。
+- 验证门（全绿 2026-07-18）：`pnpm build` ✓ 17 modules 内联；headless 综合回归（`scratchpad/drift-test.mjs`，puppeteer-core + 系统 Chrome，http 起服）12/12 通过——漂移有界 [0.266,0.454]、在动且平滑无突变、tap off 归位仍在播、暂停即停拍、**0 控制台报错**。
 
 ### 方向 B ★ 真实 CC0 录音补齐（填素材 > 写代码，工具链已就绪）
 - [ ] B1 采集 CC0 循环：大雨/海浪/溪流/篝火/微风（+ 可选雷雨/瀑布/大风）。来源 Pixabay / Freesound(CC0)。

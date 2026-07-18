@@ -3,17 +3,19 @@ import { $ } from './util.js';
 import { layers, ctx, masterPlaying } from './state.js';
 import { TIMERS } from './data.js';
 import { ensureCtx, setPlaying, rampMaster } from './engine.js';
+import { startDrift, stopDrift } from './audio/drift.js';
 import { nudge, reflectState } from './ui.js';
 
 // ---------- 睡眠定时 ----------
 let timerEnd=0, timerTick=null, timerFading=false;
-export function cancelTimer(){ if (timerTick){ clearInterval(timerTick); timerTick=null; } timerEnd=0; timerFading=false; $('countdown').textContent=''; stopDim(); }
+export function cancelTimer(){ if (timerTick){ clearInterval(timerTick); timerTick=null; } timerEnd=0; timerFading=false; $('countdown').textContent=''; stopDim(); stopDrift(); }   // 一切取消路径都收束漂移（手动暂停/清空/到点/tap off）
 export function setTimerChips(id){ document.querySelectorAll('#timers .tchip').forEach(c => c.setAttribute('aria-pressed', String(c.dataset.id===id))); }
 function setTimer(mins, id){
   setTimerChips(id); cancelTimer(); if (!mins) return;
   if (layers.size===0){ nudge(); setTimerChips('off'); return; }
   if (!masterPlaying){ ensureCtx(); if (ctx.state==='suspended') ctx.resume(); setPlaying(true); reflectState(); }
   startDim(mins);                                    // 入睡调光：声音渐隐的视觉对应物（F-9）
+  startDrift();                                       // 整夜生成式漂移：设定时即让混音开始缓慢潮汐（方向 A / A1）
   timerEnd = Date.now() + mins*60000;
   timerTick = setInterval(() => { const left = timerEnd - Date.now();
     if (left<=0){ cancelTimer(); setTimerChips('off'); setPlaying(false); reflectState(); return; }
