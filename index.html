@@ -1004,6 +1004,7 @@
     { id:'fireside',      name:'炉边', fm:95.6,  mix:{ fire:70, wind:24, lrain:24 } },
     { id:'traincabin',    name:'车厢', fm:98.3,  mix:{ train:60, hrain:30, hum:22 } },
     { id:'deepspace',     name:'深空', fm:100.9, mix:{ brown:60, hum:34 } },
+    { id:'sleeprain',     name:'雨眠', fm:103.1, mix:{ lrain:52, brown:42, hum:28 } },   // 助眠：无雷无鸟、纯连续音
   ];
   function customPresets(){ try{ return JSON.parse(localStorage.getItem('lull.presets')||'[]'); }catch(e){ return []; } }
   function saveCustomPresets(a){ localStorage.setItem('lull.presets', JSON.stringify(a)); }
@@ -1054,7 +1055,7 @@
     const box=$('dial-stations'); box.innerHTML='';
     stations().forEach(s=>{
       const b=document.createElement('button'); b.className='stn'+(s.custom?' custom':''); b.style.left=fmToPct(s.fm)+'%';
-      b.textContent=s.name; b.dataset.id=s.id; b.title=s.name+' · '+s.fm.toFixed(1)+(s.custom?' MHz · 可拖动改频率':' MHz');
+      b.textContent=s.name; b.dataset.id=s.id; b.title=s.name+' · '+s.fm.toFixed(1)+(s.custom?' MHz · 拖动改频率 · 长按删除':' MHz');
       if (s.custom) wireStationDrag(b, s);
       else b.addEventListener('click', e=>{ e.stopPropagation(); tuneTo(s, true); toast('已调到「'+s.name+'」· '+s.fm.toFixed(1)); });
       box.appendChild(b);
@@ -1062,23 +1063,27 @@
     reflectTuner();
   }
   function wireStationDrag(b, s){
-    let sd=null;
-    b.addEventListener('pointerdown', e=>{ e.stopPropagation(); e.preventDefault(); try{ b.setPointerCapture(e.pointerId); }catch(_){} sd={ startX:e.clientX, moved:false, fm:s.fm }; b.classList.add('dragging'); });
+    let sd=null, lpT=0;
+    const clearLp=()=>{ if (lpT){ clearTimeout(lpT); lpT=0; } };
+    b.addEventListener('pointerdown', e=>{ e.stopPropagation(); e.preventDefault(); try{ b.setPointerCapture(e.pointerId); }catch(_){} sd={ startX:e.clientX, moved:false, fm:s.fm }; b.classList.add('dragging');
+      clearLp(); lpT=setTimeout(()=>{ if (sd && !sd.moved){ sd=null; clearLp(); b.classList.remove('dragging'); deleteStation(s); } }, 560);   // 长按删除
+    });
     b.addEventListener('pointermove', e=>{
       if (!sd) return;
-      if (Math.abs(e.clientX-sd.startX)>4) sd.moved=true;
+      if (Math.abs(e.clientX-sd.startX)>4){ sd.moved=true; clearLp(); }
       if (!sd.moved) return;
       const r=$('dial-inner').getBoundingClientRect(), x=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));
       const fm=Math.max(FMIN+0.4, Math.min(FMAX-0.4, pctToFm(x*100)));
-      sd.fm=fm; b.style.left=fmToPct(fm)+'%'; b.title=s.name+' · '+fm.toFixed(1)+' MHz · 可拖动改频率';
+      sd.fm=fm; b.style.left=fmToPct(fm)+'%'; b.title=s.name+' · '+fm.toFixed(1)+' MHz · 拖动改频率 · 长按删除';
       if (b.classList.contains('lit')) setNeedle(fm, false);
     });
-    const end=()=>{ if (!sd) return; const { moved, fm }=sd; sd=null; b.classList.remove('dragging');
+    const end=()=>{ clearLp(); if (!sd) return; const { moved, fm }=sd; sd=null; b.classList.remove('dragging');
       if (moved){ setCustomFm(s.id, fm); renderDial(); toast('「'+s.name+'」移到 '+fm.toFixed(1)); }
-      else { tuneTo(s, true); toast('已调到「'+s.name+'」· '+s.fm.toFixed(1)); } };
+      else { tuneTo(s, true); toast('已调到「'+s.name+'」· 长按此频道可删除'); } };
     b.addEventListener('pointerup', end);
-    b.addEventListener('pointercancel', ()=>{ if (sd){ sd=null; b.classList.remove('dragging'); renderDial(); } });
+    b.addEventListener('pointercancel', ()=>{ clearLp(); if (sd){ sd=null; b.classList.remove('dragging'); renderDial(); } });
   }
+  function deleteStation(s){ if (!s) return; saveCustomPresets(customPresets().filter(q=>q.id!==s.id)); renderDial(); toast('已删除频道「'+s.name+'」'); }
   function setNeedle(fm, animate){
     curFm=fm; const dial=$('dial'); dial.classList.toggle('anim', !!animate);
     $('needle').style.left=fmToPct(fm)+'%';
@@ -1101,10 +1106,7 @@
     else if (layers.size===0){ setNeedle(FMIN, true); $('freq').textContent='— —'; $('station-now').textContent='静默 · 未调频'; dial.setAttribute('aria-valuetext','未调频'); dial.classList.remove('manual'); }
     else { $('station-now').textContent='手动调音'; dial.setAttribute('aria-valuetext','手动调音'); dial.classList.add('manual'); }
   }
-  function delActiveStation(){
-    const m=matchStation(); if (!m || !m.custom) return;
-    saveCustomPresets(customPresets().filter(q=>q.id!==m.id)); renderDial(); toast('已移除频道「'+m.name+'」');
-  }
+  function delActiveStation(){ const m=matchStation(); if (m && m.custom) deleteStation(m); }
 
   function dialPointerFm(e){ const r=$('dial-inner').getBoundingClientRect(); const x=(e.clientX-r.left)/r.width; return pctToFm(Math.max(0,Math.min(1,x))*100); }
   function dialDrag(e){
