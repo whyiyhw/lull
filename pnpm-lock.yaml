@@ -11,6 +11,9 @@ devDependencies:
   acorn:
     specifier: ^8.17.0
     version: 8.17.0
+  playwright-core:
+    specifier: ^1.61.1
+    version: 1.61.1
   vite:
     specifier: ^8.1.5
     version: 8.1.5
@@ -1180,6 +1183,12 @@ packages:
   /picomatch@4.0.5:
     resolution: {integrity: sha512-RvwwcruNjI1ncT5xRakeyS9Lf8lcItv34KD+aif+VH9kduAyfYBipGh12274xtenIPZ119/R9BdTBa8gAwSh0A==}
     engines: {node: '>=12'}
+    dev: true
+
+  /playwright-core@1.61.1:
+    resolution: {integrity: sha512-h7Qlt6m4REp25qvIdvbDtVmD4LqVXfpRxhORv9L0jzETM05p4fuPJ3dKyuSXQxDSbXnmS79HAgi9589lGSpLkg==}
+    engines: {node: '>=18'}
+    hasBin: true
     dev: true
 
   /postcss@8.5.19:

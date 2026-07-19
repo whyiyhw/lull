@@ -29,7 +29,7 @@ export const scene = (() => {
     stars.length=0; for (let i=0;i<N(80);i++) stars.push({x:rand()*W, y:rand()*H*0.75, r:rand()*1.2+0.3, ph:rand()*6.28});
     rainP.length=0; for (let i=0;i<N(200,2.6);i++) rainP.push({x:rand()*W, y:rand()*H, len:8+rand()*16, sp:6+rand()*7});
     windP.length=0; for (let i=0;i<N(70);i++) windP.push({x:rand()*W, y:rand()*H*0.9, len:20+rand()*50, sp:1.5+rand()*3, o:0.2+rand()*0.5});
-    motes.length=0; for (let i=0;i<N(55);i++) motes.push({x:rand()*W, y:rand()*H, r:rand()*2+0.6, ph:rand()*6.28, dx:(rand()-0.5)*0.3, dy:-(0.1+rand()*0.35)});
+    motes.length=0; for (let i=0;i<N(80,2.4);i++) motes.push({x:rand()*W, y:rand()*H, r:rand()*2.2+0.7, ph:rand()*6.28, dx:(rand()-0.5)*0.3, dy:-(0.1+rand()*0.35)});   // 浮尘：加密加大，森林/雾看得见（原 N(55) 太稀）
     emberP.length=0; for (let i=0;i<N(60);i++) emberP.push({x:W*(0.3+rand()*0.4), y:H*(0.7+rand()*0.3), r:rand()*1.6+0.6, sp:0.3+rand()*0.9, ph:rand()*6.28, dx:(rand()-0.5)*0.3});
     bokehP.length=0; for (let i=0;i<N(24,1.8);i++) bokehP.push({x:rand()*W, y:rand()*H, r:20+rand()*60, ph:rand()*6.28, dx:(rand()-0.5)*0.15, dy:(rand()-0.5)*0.1});
     railP.length=0; for (let i=0;i<N(40);i++) railP.push({x:rand()*W, y:rand()*H*0.85, len:40+rand()*80, sp:10+rand()*10, o:0.15+rand()*0.4});
@@ -186,7 +186,7 @@ export const scene = (() => {
     const [r,gg,bb]=hexToRgb(col); const count = Math.floor(motes.length*I);
     for (let i=0;i<count;i++){ const m=motes[i];
       if (!reduce){ m.x += m.dx; m.y += (rising?m.dy:m.dy*0.4); if (m.y<-5){ m.y=H+5; m.x=rand()*W; } if (m.x<-5) m.x=W+5; if (m.x>W+5) m.x=-5; }
-      const tw = 0.5+0.5*Math.sin(now/700+m.ph); g.globalAlpha = I*0.5*tw;
+      const tw = 0.5+0.5*Math.sin(now/700+m.ph); g.globalAlpha = I*0.6*tw;
       g.fillStyle=`rgba(${r},${gg},${bb},1)`; g.beginPath(); g.arc(m.x, m.y, m.r*sizeK, 0, 6.283); g.fill();
     }
     g.globalAlpha=1;

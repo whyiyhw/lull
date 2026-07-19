@@ -9,11 +9,13 @@
     "preview": "vite preview",
     "icons": "node scripts/gen-icons.mjs",
     "og": "node scripts/gen-og.mjs",
-    "prep-audio": "node scripts/prep-audio.mjs"
+    "prep-audio": "node scripts/prep-audio.mjs",
+    "shots": "node scripts/shots.mjs"
   },
   "devDependencies": {
     "@napi-rs/canvas": "^1.0.2",
     "acorn": "^8.17.0",
+    "playwright-core": "^1.61.1",
     "vite": "^8.1.5",
     "vite-plugin-singlefile": "^2.3.3",
     "wrangler": "^4.112.0"

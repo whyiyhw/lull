@@ -193,9 +193,9 @@
   .cell[aria-pressed="true"] .dot { opacity: 1; background: rgba(10,20,18,.55); }
 
   /* 细分子选择器（鸟种/虫种/篝火性格/咖啡细节/雨的质地，复用 .bird-* 类名） */
-  .bird-picker { flex: 0 0 100%; width: 100%; margin-top: 4px; padding: 11px 12px; border-radius: 13px;
-    border: 1px solid var(--line); background: var(--glass-2); display: flex; flex-direction: column; gap: 9px; }
-  .bird-picker-head { font-family: var(--serif); font-style: italic; font-size: 12.5px; color: var(--ink-faint); display: flex; align-items: center; gap: 8px; }
+  .bird-picker { flex: 0 0 100%; width: 100%; margin-top: 4px; padding: 9px 11px; border-radius: 12px;
+    border: 1px solid color-mix(in oklab, var(--line) 65%, transparent); background: color-mix(in oklab, var(--glass-2) 45%, transparent); display: flex; flex-direction: column; gap: 8px; }
+  .bird-picker-head { font-family: var(--serif); font-style: italic; font-size: 11px; color: var(--ink-faint); display: flex; align-items: center; gap: 7px; }
   .bird-picker-head .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; opacity: .7; }
   .bird-chips { display: flex; flex-wrap: wrap; gap: 7px; }
   .bird-chip { appearance: none; cursor: pointer; font-family: var(--sans); font-size: 12.5px; padding: 6px 12px; border-radius: 11px;
@@ -204,8 +204,8 @@
   .bird-chip .bd { width: 6px; height: 6px; border-radius: 50%; background: #ffd48a; opacity: .5; transition: opacity .18s; }
   .bird-chip:hover { color: var(--ink); border-color: #ffd48a; }
   .bird-chip:active { transform: scale(.94); }
-  .bird-chip[aria-pressed="true"] { color: #0c1413; background: #ffd48a; border-color: transparent; font-weight: 600; }
-  .bird-chip[aria-pressed="true"] .bd { opacity: 1; background: rgba(10,20,18,.55); }
+  .bird-chip[aria-pressed="true"] { color: var(--warm); background: color-mix(in oklab, #ffd48a 13%, transparent); border-color: color-mix(in oklab, #ffd48a 55%, transparent); font-weight: 600; }
+  .bird-chip[aria-pressed="true"] .bd { opacity: 1; background: #ffd48a; }
 
   .timerbar { display: flex; align-items: center; gap: 10px; }
   .timerbar .eyebrow { flex: none; }
@@ -315,9 +315,10 @@
   /* 移动端：放大触控尺寸；分类页签换行全部可见（不再横滚藏 INDOOR/WARM/CALM）*/
   @media (max-width: 480px){
     .tagline { letter-spacing: .12em; }                 /* 收紧字距，窄屏不换行 */
-    .tabs { flex-wrap: wrap; row-gap: 3px; overflow-x: visible; }
-    .tab { padding: 9px 12px; font-size: 12px; }
-    .tab[aria-selected="true"]::after { left: 12px; right: 12px; }
+    .tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px 4px; overflow-x: visible; }
+    .tab { padding: 9px 6px; font-size: 12px; text-align: center; color: color-mix(in oklab, var(--ink-dim) 60%, var(--ink-faint)); }   /* 非选中收一档，退居次层级 */
+    .tab[aria-selected="true"] { color: var(--ink); }
+    .tab[aria-selected="true"]::after { left: 14px; right: 14px; }
     .tchip { padding: 9px 15px; font-size: 12.5px; }
     .cell { padding: 10px 15px; font-size: 13.5px; }
     .now { font-size: 11.5px; }
