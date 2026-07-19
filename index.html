@@ -345,6 +345,8 @@
     .station-now { font-size: 16px; }
   }
 
+  @media (max-width: 360px){ .tagline { font-size: 9.5px; letter-spacing: .05em; } }   /* 极窄屏 tagline 不换行 */
+
   /* 明暗切换 · 渐进式：切换瞬间对全元素启用色彩过渡（平时 hover 仍即时）+ 背景快照交叉淡化 */
   .theme-snap { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; opacity: 1; transition: opacity .6s ease; }
   body.theming, body.theming * { transition: background-color .55s ease, color .55s ease, border-color .55s ease, box-shadow .5s ease, fill .55s ease, stroke .55s ease !important; }

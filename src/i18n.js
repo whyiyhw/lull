@@ -48,7 +48,7 @@ const M = {
   // 调频拨盘（tuner.js）
   silentUntuned:  { zh:'静默 · 未调频', en:'Silent · not tuned' },
   untuned:        { zh:'未调频', en:'not tuned' },
-  manualTune:     { zh:'手动调音', en:'Manual tuning' },
+  manualTune:     { zh:'手动', en:'Manual' },
   removeStation:  { zh:'移除此频道', en:'Remove station' },
   saveStation:    { zh:'+ 存为频道', en:'+ Save as station' },
   stationDragTitle:{ zh:' MHz · 拖动改频率 · 长按删除', en:' MHz · drag to move · long-press to delete' },
