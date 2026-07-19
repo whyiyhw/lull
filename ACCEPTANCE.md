@@ -2,7 +2,7 @@
 
 > **为什么存在**：PRD 把「能睡着觉的最小产品（MLP）」的唯一硬门禁定为 **F-1 + F-2（含 D7）+ F-3 全部通过真机验收**。所有功能均已代码实现且部分经 headless 验证，但**零条真机执行记录 = 纸面 done**。本清单把门禁拆成可勾选的步骤，跑一遍并回填结果，才算 done。
 >
-> **必须用真机 + http(s)/PWA**：`file://` 直开会因 `fetch` 受限回退合成音、且无 Service Worker/锁屏保活，**不能**用于验收。用 `pnpm dev`（同一 Wi-Fi 下手机开 `http://<你的电脑IP>:5173`）或部署到静态托管后访问。
+> **必须用真机 + http(s)/PWA**：`file://` 直开会因 `fetch` 受限回退合成音、且无 Service Worker/锁屏保活，**不能**用于验收。可直接用已上线的 **https://lull.whyiyhw.com**；或 `pnpm dev`（同一 Wi-Fi 下手机开 `http://<你的电脑IP>:5173`）测未发布的新改动。
 >
 > 记录格式：每项填 **设备 / 系统版本 / 日期 / ✅或❌ / 备注**。任一 ❌ 命中「P0 bug」（循环接缝惊醒 / 锁屏断播 / 音量失控三者之一）即阻塞 v0.2。
 
@@ -14,12 +14,16 @@
 |---|---|---|
 | 设备 A（主） | iPhone · iOS Safari ≥ 16.4 | |
 | 设备 B（次） | Android · Chrome ≥ 110 | |
-| 接入方式 | 局域网 `pnpm dev` 或已部署 URL（非 file://） | |
+| 接入方式 | 已部署 URL（lull.whyiyhw.com）或局域网 `pnpm dev --host`（非 file://） | |
 | 是否装为 PWA | 主屏图标冷启动 | |
 
-启动本地服务器供手机访问：
+两种接入方式：
 
 ```bash
+# 方式 A：直接用已上线的 URL（推荐，测的是发布态）
+#   https://lull.whyiyhw.com
+
+# 方式 B：本地起服测未发布的新改动
 pnpm dev --host        # 终端会打印 Network: http://192.168.x.x:5173
 ```
 

@@ -10,7 +10,7 @@
 
 ### 收口-1 · 真机验收（v0.2 唯一硬门禁）🔒
 - **阻塞于**：需要真 iPhone/Android + http(s)/PWA（非 file://）。这是我（AI）做不到的一步。
-- **怎么做**：`pnpm dev --host` → 手机同网访问，照 `ACCEPTANCE.md` §1–§6 逐项跑并回填。
+- **怎么做**：`pnpm dev --host` → 手机同网访问，或直接用已上线的 `https://lull.whyiyhw.com`，照 `ACCEPTANCE.md` §1–§6 逐项跑并回填。
 - **判定**：§1 F-1 + §2 F-2/D7 + §3 F-3 全绿 = MLP 成立。任一「循环接缝惊醒 / 锁屏断播 / 音量失控」= P0，阻塞发布。
 - **为什么第一**：不过这关，所有「代码 done」都是纸面 done。
 
@@ -23,10 +23,10 @@
 ### 收口-4 · D12 鸟鸣连续画法 ✅（2026-07-18）
 `drawBirds` 金色羽尘，与 `intensity('birds')` 密度联动。
 
-### 收口-5 · 部署上线（GitHub Pages）🔒
-- **已备**：`.github/workflows/deploy.yml`（pnpm→build→Pages，`base:'./'` 已适配项目站点）。
-- **阻塞于**：仓库当前**无 git 远端**。需 ① 建 GitHub 远端并 push；② Settings→Pages→Source 选「GitHub Actions」。
-- **产出**：真实 URL → 可装主屏离线用 → 才能收 issue 反馈（PRD 成功度量靠这个）。
+### 收口-5 · 部署上线（Cloudflare Workers 静态资源）✅（2026-07-18）
+- **已完成**：远端 `github.com/whyiyhw/lull.git` 已建并 push；线上 **https://lull.whyiyhw.com** 已上线（Cloudflare Workers 静态资源 + 自定义域，配置见 `wrangler.jsonc`）。部署改为手动 `pnpm build && npx wrangler deploy`（原 GitHub Pages 工作流已弃用）。
+- **后续可选**：在 Cloudflare 后台接 GitHub 仓库做 push 自动构建（构建 `pnpm build` / 部署 `npx wrangler deploy`），或加 GitHub Actions 调 wrangler，让 push 即上线。当前不影响功能与离线使用。
+- **产出已达成**：真实 URL → 可装主屏离线用 → 可收 issue 反馈（PRD 成功度量）。
 
 ### 收口-6 · D10 拆 ES modules ✅（2026-07-18）
 - **已完成**：1276 行单 IIFE → 12 个扁平模块（产物仍是自包含单文件，`pnpm build` 内联 16 modules）。共享可变态用 `state.js` 的「live binding + setter」模式解循环依赖：各模块 import 读到的永远是最新值，仅 ctx/master/reverb/reverbBus/masterPlaying/masterVol 的重新赋值走 setter。
@@ -46,7 +46,7 @@
   | `immersive.js` | 63 | Wake Lock + 沉浸态 + 全屏 + 快捷键 |
   | `app.js` | 53 | 入口：主题、监听装配、初始化、SW |
 - **加东西现在改哪**：加声音 → `data.js`(+`synth.js` 若需声部)；加画法 → `scene.js`；加频道 → `data.js` 的 BUILTIN_PRESETS。
-- **验证门（全绿）**：`pnpm build` ✓；headless 综合回归（`scratchpad/split-test.mjs`）——boot 8 tab/6 定时/7 频道/3 格子；D8 churn 12→2→10；深链路（频道加载 3 层 + lit、鸟种 5 chip、雨质地、定时倒计时、主题/分享/存频道/清空）全过；**0 控制台报错**。等价性确立。
+- **验证门（全绿）**：`pnpm build` ✓；开发期 headless 综合回归（puppeteer-core + 系统 Chrome）——boot 8 tab/6 定时/7 频道/3 格子；D8 churn 12→2→10；深链路（频道加载 3 层 + lit、鸟种 5 chip、雨质地、定时倒计时、主题/分享/存频道/清空）全过；**0 控制台报错**。等价性确立。（注：这些是一次性临时脚本，未入仓；若需回归可复现，考虑沉淀进 `test/` + CI。）
 
 ---
 
@@ -60,7 +60,7 @@
 - [x] A4 接入 freeze/wake ✅（2026-07-18）：`freezeDrift()`/`wakeDrift()` 挂进 `engine.js` 的 `freezeSchedulers`/`wakeSchedulers`；headless 验证暂停后 12s 内 0 漂移斜坡、活跃定时器回落，D8 熄火不回归。
 - [ ] A5 真机听感终审（不刺醒、无接缝）——**下一步只有用户能做**：设个短定时挂一整夜/快进听，确认摆幅（±26%）、周期（11–27min）、归位是否舒服；不满意直接调 drift.js 顶部常量。
 - 画面自动跟随（canvas 本就是 mix 的镜像），无需额外视觉。
-- 验证门（全绿 2026-07-18）：`pnpm build` ✓ 17 modules 内联；headless 综合回归（`scratchpad/drift-test.mjs`，puppeteer-core + 系统 Chrome，http 起服）12/12 通过——漂移有界 [0.266,0.454]、在动且平滑无突变、tap off 归位仍在播、暂停即停拍、**0 控制台报错**。
+- 验证门（全绿 2026-07-18）：`pnpm build` ✓ 17 modules 内联；开发期 headless 回归（puppeteer-core + 系统 Chrome、http 起服）12/12 通过——漂移有界 [0.266,0.454]、在动且平滑无突变、tap off 归位仍在播、暂停即停拍、**0 控制台报错**。（注：一次性脚本未入仓，见下方「回归脚本」。）
 
 ### 方向 B ★ 真实 CC0 录音补齐（填素材 > 写代码，工具链已就绪）
 - [ ] B1 采集 CC0 循环：大雨/海浪/溪流/篝火/微风（+ 可选雷雨/瀑布/大风）。来源 Pixabay / Freesound(CC0)。
@@ -75,7 +75,7 @@
 - [x] C2 加权混色 tint ✅：同一 paint 多色按实时响度加权混合（回传 hex）→ 画面颜色=真实混音的颜色（白/粉/褐、四色 haze 等不再只显最响一色）。
 - [x] C3 点选微光 bloom ✅：手动选一个声音，画面在其颜色里轻轻晕开（点击→画面的回应）；reduced-motion 跳过。
 - [x] C4 时段染色 ✅：地平线暖光随真实时间在黄昏琥珀/深夜近无/黎明玫瑰间极缓移动（浅色主题减半）。headless 确证黄昏 R=28.5 vs 深夜 10.8、暖度差 13.7。
-- 验证门（全绿 2026-07-18）：`pnpm build` ✓；headless（`scratchpad/scene-test.mjs` 6/6 + `timeglow-test.mjs`）——8 分类多 paint/多色同桶选中、画布逐帧未冻结（draw 无异常）、调频/音量/暂停恢复/清空全过、时段染色确证、**0 报错**。
+- 验证门（全绿 2026-07-18）：`pnpm build` ✓；开发期 headless 回归（scene 6/6 + 时段染色）——8 分类多 paint/多色同桶选中、画布逐帧未冻结（draw 无异常）、调频/音量/暂停恢复/清空全过、时段染色确证、**0 报错**。
 - [x] C5 地铁/翻书/滴答/猫呼噜专属画法 ✅（2026-07-18）：四者从复用通用 paint 分出独立 paint（metro/paper/clock/purr）+ 各自 drawX——地铁隧道灯柱横扫（FAST）、翻书暖色纸屑翻飞、滴答极淡"时间在走"呼吸光（无跳动、助眠优先）、猫呼噜底部随睡眠呼吸缓胀的暖光。reduced-motion 全部降级为静态。headless 26 声音全选覆盖、0 报错。「画面=混音活镜像」联动至此每个声音都有贴切视觉。
 - 温柔唤醒：定时到点可选「日出式」——画面渐亮 + 鸟鸣渐入当闹钟，闭环「入睡→起床」。
 - 日部时段台：按真实时间自动推荐频道（清晨→晨林、深夜→雨眠）。
@@ -83,9 +83,11 @@
 - 更多变体选择器：海浪「离岸远近」、风「穿过什么」（VARIANT_PICKERS 加一条配置即可）。
 - 英文 i18n：受众扩到全球，拉新划算。
 
+> **回归脚本**：方向 A/C 的「headless 12/12」「6/6」证据来自开发期临时跑的 puppeteer-core 脚本（`drift-test` / `scene-test` / `timeglow-test` 等），**未入仓**——属一次性验证，非可持续回归。若要把这些证据变成长期门禁，需沉淀进 `test/` 目录并接 CI（GitHub Actions 起 Vite preview + 跑 puppeteer）。当前判据仍是收口-1 的真机验收。
+
 ---
 
 ## 建议顺序
-1. **收口-1 真机验收**（+ 收口-2 的 D8 真机功耗）——否则一切 done 不作数。
-2. **收口-5 部署上线**——建 GitHub 远端 + push，拿到真实 URL 和反馈回路。（收口-6 拆模块已完成 ✅）
-3. **挑一个放大差异化的新方向**——首选 A 整夜生成式漂移 或 B 真实录音补齐。
+1. **收口-1 真机验收**（+ 收口-2 的 D8 真机功耗）——否则一切 done 不作数。直接用已上线的 `https://lull.whyiyhw.com` 跑 `ACCEPTANCE.md` 即可，无需再起本地服务。
+2. **挑一个放大差异化的新方向**——首选 A 整夜生成式漂移 的 A5 真机听感终审（代码已就绪，只欠耳朵），或 B 真实录音补齐（工具链已就绪，只欠素材）。
+3. **可选**：把开发期 headless 脚本沉淀成 `test/` + CI，让回归可复现；push 即上线（Cloudflare 接 Git 或 GitHub Actions 调 wrangler）。
