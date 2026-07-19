@@ -14,7 +14,8 @@ import { applyStaticStrings, onLocaleChange, toggleLocale, t } from './i18n.js';
 const sun = 'M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z';
 const moon = 'M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z';
 const paintTheme = () => $('theme-ico').innerHTML = '<path d="'+(curTheme()==='dark'?sun:moon)+'"/>';
-const savedTheme = localStorage.getItem('lull.theme'); if (savedTheme) root.dataset.theme = savedTheme;
+// 默认深色（Night FM 的「正脸」，深色设计更佳、白天也不发虚）；用户显式切到浅色才记住并沿用。
+const savedTheme = localStorage.getItem('lull.theme'); root.dataset.theme = savedTheme || 'dark';
 paintTheme();
 $('theme').addEventListener('click', () => { const n = curTheme()==='dark'?'light':'dark'; root.dataset.theme = n; localStorage.setItem('lull.theme', n); paintTheme(); });
 
