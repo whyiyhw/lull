@@ -6,6 +6,7 @@ import {
 } from './state.js';
 import { $, rand } from './util.js';
 import { byId, currentRainSurface } from './data.js';
+import { scene } from './scene.js';
 import { wireSynthEvents, wireSceneEmitters, buildBowl } from './synth.js';
 import { setupKeepAlive, setupMediaSession, keepAlive, attemptRecover, updateMediaSession } from './lockscreen.js';
 import { reflectChips, renderMixer, reflectState, reflectPlay, nudge, toast } from './ui.js';
@@ -184,7 +185,7 @@ function removeLayer(id, fade){
 export function toggleSound(id){
   ensureCtx(); if (ctx.state==='suspended') ctx.resume();
   if (layers.has(id)) removeLayer(id, true);
-  else { layers.set(id, buildLayer(byId(id))); if (!masterPlaying) setPlaying(true); }
+  else { layers.set(id, buildLayer(byId(id))); scene.bloom(byId(id).color); if (!masterPlaying) setPlaying(true); }   // 点选微光：画面在该声音的颜色里晕开
   reflectChips(); renderMixer(); reflectState(); persistMix(); updateMediaSession(); reflectTuner();
 }
 export function toggleMaster(){

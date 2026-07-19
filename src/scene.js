@@ -8,11 +8,12 @@ export const scene = (() => {
   const cv = $('scene'), g = cv.getContext('2d');
   let W=0, H=0, dpr=1, lastT=performance.now();
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const stars=[], rainP=[], windP=[], motes=[], sparks=[], flashes=[], emberP=[], bokehP=[], railP=[], snowP=[], ripples=[], birdsP=[];
+  const stars=[], rainP=[], windP=[], motes=[], sparks=[], flashes=[], emberP=[], bokehP=[], railP=[], snowP=[], ripples=[], birdsP=[], blooms=[], metroP=[], paperP=[];
+  const iCur = Object.create(null);   // paint -> 平滑后的强度：画面对混音的迟滞镜像（气象般晕开/消散，且随漂移呼吸）
   let oceanPhase=0;
   // 帧率自适应 + 后台停画（F-2 / F-5）
   let running=true, frameReq=0, lastFrame=0;
-  const FAST = new Set(['rain','fire','birds','grain','wind','rail','ocean','snow']);   // snow 是连续粒子系统，应保持满帧（D11③）
+  const FAST = new Set(['rain','fire','birds','grain','wind','rail','ocean','snow','metro']);   // snow 是连续粒子系统，应保持满帧（D11③）；metro 灯柱横扫需满帧
   function hasFast(){ if (!masterPlaying) return false; for (const id of layers.keys()){ if (FAST.has(byId(id).paint)) return true; } return false; }
 
   function hexToRgb(h){ h=h.replace('#',''); return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]; }
@@ -33,17 +34,42 @@ export const scene = (() => {
     railP.length=0; for (let i=0;i<N(40);i++) railP.push({x:rand()*W, y:rand()*H*0.85, len:40+rand()*80, sp:10+rand()*10, o:0.15+rand()*0.4});
     snowP.length=0; for (let i=0;i<N(90,2.6);i++) snowP.push({x:rand()*W, y:rand()*H, r:rand()*1.8+0.7, sp:0.5+rand()*1.1, drift:(rand()-0.5)*0.6, ph:rand()*6.28, a:0.5+rand()*0.5});
     birdsP.length=0; for (let i=0;i<N(46,1.8);i++) birdsP.push({x:rand()*W, y:rand()*H*0.72, r:rand()*1.5+0.5, sp:0.12+rand()*0.5, dx:(rand()-0.5)*0.5, ph:rand()*6.28});   // 鸟鸣：金色羽尘/光点漂移（D12）
+    metroP.length=0; for (let i=0;i<N(11);i++) metroP.push({x:rand()*W, y:rand()*H*0.8, w:26+rand()*70, h:H*(0.4+rand()*0.5), sp:6+rand()*8, o:0.16+rand()*0.3});   // 地铁：隧道灯柱横扫
+    paperP.length=0; for (let i=0;i<N(34);i++) paperP.push({x:rand()*W, y:rand()*H, s:3+rand()*4, sp:0.7+rand()*1.1, ph:rand()*6.28});   // 翻书：暖色纸屑翻飞
   }
 
-  // 各气象强度（依据当前混音 + 音量）
-  function intensity(paint){
-    let s = 0;
-    layers.forEach((l, id) => { const c=byId(id); if (c.paint===paint){ s += volOf(id) * (masterVol/100) * (masterPlaying?1:0.35); } });
-    return Math.min(1, s);
+  // 各气象强度：读活层的**实时增益**（含渐入/漂移/音量斜坡），而非静态目标 → 画面是混音真正活的镜像。
+  // sqrt 把 perc 后的增益还原回 volOf 量级，静止态与旧版一致；缓动交给 stepIntensities。
+  const liveGain = l => l.gain ? Math.max(0, l.gain.gain.value) : 0;
+  function rawTargets(){
+    const t = Object.create(null), mv = masterVol/100, play = masterPlaying?1:0.35;
+    layers.forEach((l, id) => { const p=byId(id).paint; if (!p) return; t[p] = (t[p]||0) + Math.sqrt(liveGain(l)) * mv * play; });
+    return t;
   }
+  // 逐帧把 iCur 向目标缓动（~0.55s 时间常数）；reduced-motion 直接吸附。目标为 0 且已淡尽则回收。
+  function stepIntensities(dt){
+    const t = rawTargets(), k = reduce ? 1 : (1 - Math.exp(-dt/0.55));
+    const keys = new Set(); for (const p in iCur) keys.add(p); for (const p in t) keys.add(p);
+    keys.forEach(p => { const cur=iCur[p]||0, tg=t[p]||0, nv=cur+(tg-cur)*k; if (nv<0.0008 && tg===0) delete iCur[p]; else iCur[p]=nv; });
+  }
+  function intensity(paint){ return Math.min(1, iCur[paint]||0); }
+  // 时段染色：地平线暖光随真实时间在「黄昏琥珀 / 深夜近无 / 黎明玫瑰」间极缓移动，让电台知道现在几点。
+  // 高斯按 24h 环绕加权两个暖调；深夜衰减到近无，守夜·玻璃护栏（很淡、不 kitsch）。
+  function gaussWrap(x, mu, sig){ const d=Math.min(Math.abs(x-mu), 24-Math.abs(x-mu)); return Math.exp(-(d*d)/(2*sig*sig)); }
+  function timeGlow(){
+    const t=new Date(), h=t.getHours()+t.getMinutes()/60;
+    const dusk=gaussWrap(h,18.7,2.3), dawn=gaussWrap(h,6.0,1.9), w=dusk+dawn;
+    if (w<0.02) return null;
+    const dc=[255,150,86], wc=[255,170,150];   // 黄昏琥珀 / 黎明玫瑰
+    return { r:(dc[0]*dusk+wc[0]*dawn)/w|0, g:(dc[1]*dusk+wc[1]*dawn)/w|0, b:(dc[2]*dusk+wc[2]*dawn)/w|0, a:0.11*Math.max(dusk,dawn) };
+  }
+  // 同一 paint 下多个声音按实时响度加权混色（回传 hex，兼容下游 hexToRgb）→ 画面颜色 = 真实混音的颜色。
   function tintOf(paint, fallback){
-    let best=null, bv=0; layers.forEach((l,id)=>{ const c=byId(id); if (c.paint===paint){ const v=volOf(id); if (v>=bv){ bv=v; best=c.color; } } });
-    return best || fallback;
+    let r=0, gg=0, bb=0, w=0;
+    layers.forEach((l,id)=>{ const c=byId(id); if (c.paint!==paint) return; const wt=Math.sqrt(liveGain(l)); if (wt<=0) return; const [cr,cg,cb]=hexToRgb(c.color); r+=cr*wt; gg+=cg*wt; bb+=cb*wt; w+=wt; });
+    if (w<=0) return fallback;
+    const h = n => Math.max(0,Math.min(255,Math.round(n/w))).toString(16).padStart(2,'0');
+    return '#'+h(r)+h(gg)+h(bb);
   }
 
   function draw(now){
@@ -52,11 +78,16 @@ export const scene = (() => {
     if (now - lastFrame < minInt){ frameReq=requestAnimationFrame(draw); return; }
     lastFrame = now;
     const dt = Math.min(0.05, (now-lastT)/1000); lastT = now;
+    stepIntensities(dt);                                                            // 迟滞镜像：每帧把画面强度朝当前混音缓动
     const dark = curTheme()==='dark';
     // 背景
     const top = themeVar('--scene-top'), bot = themeVar('--scene-bot');
     const bg = g.createLinearGradient(0,0,0,H); bg.addColorStop(0,top); bg.addColorStop(1,bot);
     g.fillStyle = bg; g.fillRect(0,0,W,H);
+
+    // 时段染色：地平线暖光（黄昏/黎明缓现，深夜近无；浅色主题减半以免发浑）
+    const tg=timeGlow(); if (tg){ const a=tg.a*(dark?1:0.5); const gr=g.createLinearGradient(0,H,0,H*0.34);
+      gr.addColorStop(0,`rgba(${tg.r},${tg.g},${tg.b},${a})`); gr.addColorStop(1,`rgba(${tg.r},${tg.g},${tg.b},0)`); g.fillStyle=gr; g.fillRect(0,0,W,H); }
 
     // 极光辉带（环境）
     const auroraI = 0.5 + 0.5*intensity('forest') + 0.4*intensity('ocean');
@@ -82,6 +113,10 @@ export const scene = (() => {
 
     // 火车轨迹 / 咖啡馆光斑 / 篝火 / 颂钵涟漪
     const irl = intensity('rail'); if (irl>0.01) drawRail(irl, tintOf('rail','#b9c4cf'), dt);
+    const ime = intensity('metro'); if (ime>0.01) drawMetro(ime, tintOf('metro','#9fb0c0'), dt);
+    const ipp = intensity('paper'); if (ipp>0.01) drawPaper(ipp, tintOf('paper','#e8dcc0'), now, dt);
+    const icl = intensity('clock'); if (icl>0.01) drawClock(icl, tintOf('clock','#c9d2dc'), now);
+    const ipr = intensity('purr'); if (ipr>0.01) drawPurr(ipr, tintOf('purr','#f0b58a'), now);
     const ibk = intensity('bokeh'); if (ibk>0.01) drawBokeh(ibk, tintOf('bokeh','#ffc59a'), now);
     const ifire = intensity('fire'); if (ifire>0.01) drawFire(ifire, tintOf('fire','#ff9a5a'), now, dt);
     drawRipplesBase(intensity('ripple'), tintOf('ripple','#e6d3a0'), now, dt);
@@ -100,6 +135,13 @@ export const scene = (() => {
     // 闪电
     for (let i=flashes.length-1;i>=0;i--){ const f=flashes[i]; f.age+=dt; const k=f.age/f.life; if (k>=1){ flashes.splice(i,1); continue; }
       const a = (1-k)*(1-k)*0.5; g.globalAlpha=a; g.fillStyle = dark?'#eaf4ff':'#ffffff'; g.fillRect(0,0,W,H); g.globalAlpha=1; }
+
+    // 点选微光：手动选一个声音时，画面在它的颜色里轻轻晕开一下（点击→画面的回应）
+    for (let i=blooms.length-1;i>=0;i--){ const b=blooms[i]; b.age+=dt; const k=b.age/b.life; if (k>=1){ blooms.splice(i,1); continue; }
+      const [r,gg,bb]=hexToRgb(b.color); const rad=Math.max(W,H)*(0.05+k*0.32), a=(1-k)*(1-k)*0.5;
+      const rg=g.createRadialGradient(b.x,b.y,0,b.x,b.y,rad);
+      rg.addColorStop(0,`rgba(${r},${gg},${bb},${a})`); rg.addColorStop(1,`rgba(${r},${gg},${bb},0)`);
+      g.fillStyle=rg; g.beginPath(); g.arc(b.x,b.y,rad,0,6.283); g.fill(); }
 
     // 暗角
     const vg = g.createRadialGradient(W/2,H*0.42,Math.min(W,H)*0.2, W/2,H*0.5,Math.max(W,H)*0.75);
@@ -211,6 +253,38 @@ export const scene = (() => {
       if (!reduce){ p.x-=p.sp*(0.8+I)*(dt*60); if (p.x<-p.len){ p.x=W+p.len; p.y=rand()*H*0.85; } }
       g.strokeStyle=`rgba(${r},${gg},${bb},${p.o*I*0.5})`; g.beginPath(); g.moveTo(p.x,p.y); g.lineTo(p.x+p.len,p.y); g.stroke(); }
   }
+  // 地铁：隧道灯柱自右向左横扫（比火车更"地下"、更快的光柱），soft glow 竖条
+  function drawMetro(I, col, dt){
+    const [r,gg,bb]=hexToRgb(col); const count=Math.floor(metroP.length*I);
+    for (let i=0;i<count;i++){ const p=metroP[i];
+      if (!reduce){ p.x -= p.sp*(0.8+1.4*I)*(dt*60); if (p.x < -p.w){ p.x=W+p.w; p.y=rand()*H*0.8; p.h=H*(0.4+rand()*0.5); } }
+      const gr=g.createLinearGradient(p.x-p.w/2,0,p.x+p.w/2,0);
+      gr.addColorStop(0,`rgba(${r},${gg},${bb},0)`); gr.addColorStop(0.5,`rgba(${r},${gg},${bb},${p.o*I*0.5})`); gr.addColorStop(1,`rgba(${r},${gg},${bb},0)`);
+      g.fillStyle=gr; g.fillRect(p.x-p.w/2, p.y, p.w, p.h); }
+  }
+  // 翻书：暖色纸屑在阅读光里缓缓飘落 + 轻摆 + 微旋
+  function drawPaper(I, col, now, dt){
+    const [r,gg,bb]=hexToRgb(col); const count=Math.floor(paperP.length*I);
+    for (let i=0;i<count;i++){ const p=paperP[i];
+      if (!reduce){ p.y += p.sp*(0.4+0.5*I)*(dt*60); p.x += Math.sin(now/1300+p.ph)*0.5*(dt*60); if (p.y>H+6){ p.y=-6; p.x=rand()*W; } if (p.x<-6) p.x=W+6; if (p.x>W+6) p.x=-6; }
+      const tw=0.5+0.5*Math.sin(now/900+p.ph);
+      g.save(); g.globalAlpha=I*0.4*Math.max(0,tw); g.translate(p.x,p.y); g.rotate(reduce?0:Math.sin(now/1600+p.ph)*0.5);
+      g.fillStyle=`rgba(${r},${gg},${bb},1)`; g.fillRect(-p.s, -p.s*0.35, p.s*2, p.s*0.7); g.restore(); }
+    g.globalAlpha=1;
+  }
+  // 滴答：极淡的"时间在走"呼吸光（约 4s 一呼吸，绝不做刺眼的跳动 —— 助眠优先）
+  function drawClock(I, col, now){
+    const [r,gg,bb]=hexToRgb(col); const p=reduce?0.6:(0.5+0.5*Math.sin(now/640));
+    const a=I*0.08*(0.5+0.5*p), rg=g.createRadialGradient(W/2,H*0.5,0,W/2,H*0.5,Math.max(W,H)*(0.3+0.05*p));
+    rg.addColorStop(0,`rgba(${r},${gg},${bb},${a})`); rg.addColorStop(1,`rgba(${r},${gg},${bb},0)`); g.fillStyle=rg; g.fillRect(0,0,W,H);
+  }
+  // 猫呼噜：底部一团随睡眠呼吸缓胀缓落的暖光（约 2s 一呼吸，蜷卧感）
+  function drawPurr(I, col, now){
+    const [r,gg,bb]=hexToRgb(col); const b=reduce?0.6:(0.5+0.5*Math.sin(now/340));
+    const cx=W/2, cy=H*0.82, rad=Math.max(W,H)*(0.26+0.06*b), a=I*0.14*(0.55+0.45*b);
+    const rg=g.createRadialGradient(cx,cy,0,cx,cy,rad);
+    rg.addColorStop(0,`rgba(${r},${gg},${bb},${a})`); rg.addColorStop(1,`rgba(${r},${gg},${bb},0)`); g.fillStyle=rg; g.fillRect(0,0,W,H);
+  }
   function drawRipplesBase(I, col, now, dt){
     const [r,gg,bb]=hexToRgb(col);
     if (I>0.01){ const p=0.5+0.5*Math.sin(now/2400); const rg=g.createRadialGradient(W/2,H*0.44,0,W/2,H*0.44,Math.max(W,H)*0.5);
@@ -221,7 +295,7 @@ export const scene = (() => {
     g.globalAlpha=1;
   }
 
-  function clearFX(){ sparks.length=0; flashes.length=0; ripples.length=0; }
+  function clearFX(){ sparks.length=0; flashes.length=0; ripples.length=0; blooms.length=0; }
   function pause(){ running=false; if (frameReq) cancelAnimationFrame(frameReq); frameReq=0; clearFX(); }
   function resume(){ if (running) return; running=true; lastT=performance.now(); lastFrame=0; frameReq=requestAnimationFrame(draw); }
 
@@ -232,5 +306,6 @@ export const scene = (() => {
     lightning(){ if (!running||document.hidden) return; flashes.push({age:0, life:0.55}); },
     ember(color){ if (!running||document.hidden) return; sparks.push({x: W*(0.34+rand()*0.32), y: H*(0.80+rand()*0.1), age:0, life:0.8+rand()*0.5, color}); },
     ripple(color){ if (!running||document.hidden) return; ripples.push({age:0, life:5.5, color}); },
+    bloom(color){ if (!running||document.hidden||reduce) return; blooms.push({x:W*(0.3+rand()*0.4), y:H*(0.32+rand()*0.3), age:0, life:1.7, color}); },
   };
 })();

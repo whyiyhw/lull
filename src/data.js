@@ -31,13 +31,13 @@ export const SOUNDS = [
   { id:'fan', name:'风扇', cat:'room', base:'brown', color:'#c2ccd8', paint:'haze', filters:[{type:'lowpass',freq:240,q:0.7}] },
   { id:'ac',  name:'空调', cat:'room', base:'brown', color:'#b6c4d0', paint:'haze', filters:[{type:'lowpass',freq:170,q:0.7}], tone:{freq:120,type:'sine',gain:0.05} },
   { id:'train', name:'火车', cat:'room', base:'brown', color:'#b9c4cf', paint:'rail', file:'train.mp3', filters:[{type:'lowpass',freq:160,q:0.7}], clack:true },
-  { id:'subway', name:'地铁', cat:'room', base:'brown', color:'#9fb0c0', paint:'rail', filters:[{type:'lowpass',freq:260,q:0.7}], lfo:{rate:0.2,depth:400,target:'freq'}, clack:true },
-  { id:'pages',  name:'翻书', cat:'room', base:null,    color:'#e8dcc0', paint:'mist', pages:true, reverb:0.2 },
-  { id:'tick',   name:'滴答', cat:'room', base:null,    color:'#c9d2dc', paint:'ripple', tick:true },
+  { id:'subway', name:'地铁', cat:'room', base:'brown', color:'#9fb0c0', paint:'metro', filters:[{type:'lowpass',freq:260,q:0.7}], lfo:{rate:0.2,depth:400,target:'freq'}, clack:true },
+  { id:'pages',  name:'翻书', cat:'room', base:null,    color:'#e8dcc0', paint:'paper', pages:true, reverb:0.2 },
+  { id:'tick',   name:'滴答', cat:'room', base:null,    color:'#c9d2dc', paint:'clock', tick:true },
 
   { id:'fire', name:'篝火',   cat:'warm', base:'brown', color:'#ff9a5a', paint:'fire',  filters:[{type:'lowpass',freq:380,q:0.7}], lfo:{rate:0.5,depth:120,target:'freq'}, crackle:true, reverb:0.15 },
   { id:'cafe', name:'咖啡馆', cat:'warm', base:'pink',  color:'#ffc59a', paint:'bokeh', file:'cafe.mp3', filters:[{type:'bandpass',freq:750,q:0.9}], lfo:{rate:0.4,depth:0.4,target:'gain'}, clink:true, reverb:0.3 },
-  { id:'purr', name:'猫呼噜', cat:'warm', base:'brown', color:'#f0b58a', paint:'haze', filters:[{type:'lowpass',freq:220,q:0.8}], lfo:{rate:26,depth:0.55,target:'gain'} },
+  { id:'purr', name:'猫呼噜', cat:'warm', base:'brown', color:'#f0b58a', paint:'purr', filters:[{type:'lowpass',freq:220,q:0.8}], lfo:{rate:26,depth:0.55,target:'gain'} },
 
   { id:'bowl', name:'颂钵', cat:'calm', base:null,    color:'#e6d3a0', paint:'ripple', bowl:{freq:236}, reverb:0.6 },
   { id:'hum',  name:'低鸣', cat:'calm', base:'brown', color:'#a9bccb', paint:'haze',   filters:[{type:'lowpass',freq:110,q:0.8}] },
