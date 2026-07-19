@@ -25,12 +25,10 @@ const M = {
   soundsLabel:  { zh:'声音', en:'Sounds' },
   dialLabel:    { zh:'调频 · 频道选择', en:'Tune · station select' },
   mixEyebrow:   { zh:'Mix · 混音台', en:'Mix' },
-  // 页脚：开源 / 反馈 / 署名
-  crStar:       { zh:'给个 Star', en:'Star' },
+  // 页脚：开源 / 反馈（图标，文案仅作 aria/title）+ 署名
   crStarLabel:  { zh:'在 GitHub 上给 Lull 点 Star', en:'Star Lull on GitHub' },
-  crFeedback:   { zh:'反馈', en:'Feedback' },
   crFbLabel:    { zh:'提反馈 / 报问题（GitHub Issues）', en:'Send feedback / report an issue' },
-  crBy:         { zh:'由 whyiyhw 制作', en:'made by whyiyhw' },
+  crBy:         { zh:'由 whyiyhw 创造', en:'created by whyiyhw' },
 
   // 播放 / 混音状态（ui.js）
   play:         { zh:'播放', en:'Play' },
@@ -109,8 +107,8 @@ export function applyStaticStrings(){
   T('mix-eyebrow', 'mixEyebrow');
   T('lang-txt', 'langBtn');
   A('lang', 'aria-label', 'langLabel'); A('lang', 'title', 'langLabel');
-  T('cr-star-txt', 'crStar'); A('cr-star', 'aria-label', 'crStarLabel'); A('cr-star', 'title', 'crStarLabel');
-  T('cr-fb-txt', 'crFeedback'); A('cr-feedback', 'aria-label', 'crFbLabel'); A('cr-feedback', 'title', 'crFbLabel');
+  A('cr-star', 'aria-label', 'crStarLabel'); A('cr-star', 'title', 'crStarLabel');
+  A('cr-feedback', 'aria-label', 'crFbLabel'); A('cr-feedback', 'title', 'crFbLabel');
   T('cr-by', 'crBy');
 }
 

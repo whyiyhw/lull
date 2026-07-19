@@ -286,13 +286,16 @@
   .dim-veil { position: fixed; inset: 0; z-index: 2; background: #04070a; opacity: 0; pointer-events: none; }
   :root[data-theme="light"] .dim-veil { background: #223028; }
 
-  /* 页脚署名 / 开源 / 反馈（很淡，随控制台一起在沉浸态隐去）*/
-  .credits { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px;
-    font-family: var(--mono); font-size: 11px; letter-spacing: .03em; color: var(--ink-faint); padding: 2px 0; }
-  .credits a { color: var(--ink-faint); text-decoration: none; display: inline-flex; align-items: center; gap: 5px; transition: color .16s; }
-  .cr-link:hover { color: var(--warm); }
+  /* 页脚：含蓄的开源/反馈图标（hover 才亮 + 微上浮）+ 斜体衬线签名；随控制台在沉浸态淡出 */
+  .credits { display: flex; align-items: center; justify-content: center; gap: 13px; padding: 2px 0; }
+  .cr-ico { color: var(--ink-faint); opacity: .5; display: inline-flex; text-decoration: none;
+    transition: color .18s, opacity .18s, transform .18s; }
+  .cr-ico:hover { color: var(--warm); opacity: 1; transform: translateY(-1px); }
+  .cr-ico svg { width: 15px; height: 15px; display: block; }
+  .cr-sep { width: 1px; height: 11px; background: var(--line-strong); opacity: .55; }
+  .cr-by { font-family: var(--serif); font-style: italic; font-size: 12.5px; letter-spacing: .01em;
+    color: var(--ink-faint); text-decoration: none; transition: color .18s; }
   .cr-by:hover { color: var(--ink-dim); }
-  .cr-dot { opacity: .5; }
 
   /* 沉浸挂机态（F-9）：播放中 8s 无交互 → 控制台与光标淡出，仅留场景 + 时钟；任意输入 300ms 内恢复 */
   header, .console, .mixline, .datemeta, .credits { transition: opacity 1s ease, transform 1s ease; }
@@ -393,14 +396,14 @@
     </section>
 
     <footer class="credits">
-      <a class="cr-link" id="cr-star" href="https://github.com/whyiyhw/lull" target="_blank" rel="noopener">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.1 1.2 6L12 16.9 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/></svg>
-        <span id="cr-star-txt">Star</span>
+      <a class="cr-ico" id="cr-star" href="https://github.com/whyiyhw/lull" target="_blank" rel="noopener" aria-label="Star Lull on GitHub" title="Star on GitHub">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.25.8-.56v-1.95c-3.2.7-3.9-1.54-3.9-1.54-.53-1.34-1.3-1.7-1.3-1.7-1.06-.72.08-.71.08-.71 1.17.08 1.79 1.2 1.79 1.2 1.04 1.79 2.73 1.27 3.4.97.1-.76.41-1.27.74-1.56-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.8 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.69 5.38-5.25 5.67.42.36.8 1.08.8 2.18v3.23c0 .31.21.67.81.56A11.5 11.5 0 0 0 23.5 12C23.5 5.7 18.3.5 12 .5z"/></svg>
       </a>
-      <span class="cr-dot">·</span>
-      <a class="cr-link" id="cr-feedback" href="https://github.com/whyiyhw/lull/issues" target="_blank" rel="noopener"><span id="cr-fb-txt">Feedback</span></a>
-      <span class="cr-dot">·</span>
-      <a class="cr-by" id="cr-by" href="https://ask.whyiyhw.com" target="_blank" rel="noopener">made by whyiyhw</a>
+      <a class="cr-ico" id="cr-feedback" href="https://github.com/whyiyhw/lull/issues" target="_blank" rel="noopener" aria-label="Send feedback" title="Feedback">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-10.9 6.68L4 19.5l1.32-3.9A7.5 7.5 0 1 1 20 11.5z"/></svg>
+      </a>
+      <span class="cr-sep" aria-hidden="true"></span>
+      <a class="cr-by" id="cr-by" href="https://ask.whyiyhw.com" target="_blank" rel="noopener">created by whyiyhw</a>
     </footer>
   </div>
 
