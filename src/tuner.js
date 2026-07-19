@@ -53,8 +53,9 @@ function renderScale(){
 }
 function renderDial(){
   const box=$('dial-stations'); box.innerHTML='';
-  stations().forEach(s=>{
-    const b=document.createElement('button'); b.className='stn'+(s.custom?' custom':''); b.style.left=fmToPct(s.fm)+'%';
+  // 按频率排序后相邻上下错行（.alt）：英文/长频道名在窄屏不再横向重合
+  stations().slice().sort((a,b)=>a.fm-b.fm).forEach((s,i)=>{
+    const b=document.createElement('button'); b.className='stn'+(s.custom?' custom':'')+(i%2?' alt':''); b.style.left=fmToPct(s.fm)+'%';
     b.textContent=s.name; b.dataset.id=s.id; b.title=s.name+' · '+s.fm.toFixed(1)+(s.custom?t('stationDragTitle'):' MHz');
     if (s.custom) wireStationDrag(b, s);
     else b.addEventListener('click', e=>{ e.stopPropagation(); tuneTo(s, true); toast(t('tunedTo', s.name, s.fm.toFixed(1))); });
