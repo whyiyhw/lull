@@ -17,7 +17,21 @@ const paintTheme = () => $('theme-ico').innerHTML = '<path d="'+(curTheme()==='d
 // 默认深色（Night FM 的「正脸」，深色设计更佳、白天也不发虚）；用户显式切到浅色才记住并沿用。
 const savedTheme = localStorage.getItem('lull.theme'); root.dataset.theme = savedTheme || 'dark';
 paintTheme();
-$('theme').addEventListener('click', () => { const n = curTheme()==='dark'?'light':'dark'; root.dataset.theme = n; localStorage.setItem('lull.theme', n); paintTheme(); });
+// 明暗切换 · 渐进式：UI 走 body.theming 色彩过渡；背景 canvas 用当前帧快照叠层淡出做交叉淡化（否则场景明暗硬跳）。
+function crossfadeTheme(n){
+  try {
+    const cv = $('scene'), snap = document.createElement('canvas');
+    snap.width = cv.width; snap.height = cv.height; snap.className = 'theme-snap';
+    snap.getContext('2d').drawImage(cv, 0, 0);
+    document.body.appendChild(snap);
+    requestAnimationFrame(() => requestAnimationFrame(() => { snap.style.opacity = '0'; }));
+    setTimeout(() => snap.remove(), 640);
+  } catch (e) {}
+  document.body.classList.add('theming');
+  setTimeout(() => document.body.classList.remove('theming'), 640);
+  root.dataset.theme = n; localStorage.setItem('lull.theme', n); paintTheme();
+}
+$('theme').addEventListener('click', () => crossfadeTheme(curTheme()==='dark' ? 'light' : 'dark'));
 
 // ---------- 语言（i18n · 中英）----------
 applyStaticStrings();                                  // 按当前语言刷新静态标签（tagline/aria/按钮…）
