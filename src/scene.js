@@ -41,9 +41,14 @@ export const scene = (() => {
   // 各气象强度：读活层的**实时增益**（含渐入/漂移/音量斜坡），而非静态目标 → 画面是混音真正活的镜像。
   // sqrt 把 perc 后的增益还原回 volOf 量级，静止态与旧版一致；缓动交给 stepIntensities。
   const liveGain = l => l.gain ? Math.max(0, l.gain.gain.value) : 0;
+  // 画面强度信号：实时增益（含渐入/漂移/音量斜坡的「呼吸」）与存储音量 volOf 取大兜底。
+  // iOS Safari 下 AudioParam.value 常不反映已排程的 linearRamp 自动化（读回 ~0），只靠 liveGain
+  // 会让真机上「声音专属气象」画不出来（只剩环境极光/星空）；volOf 始终可靠且量级一致
+  // （sqrt(perc(v))≈v）→ 桌面照常随增益呼吸、移动端保证一定出画。
+  const amt = (l, id) => Math.max(Math.sqrt(liveGain(l)), volOf(id));
   function rawTargets(){
     const t = Object.create(null), mv = masterVol/100, play = masterPlaying?1:0.35;
-    layers.forEach((l, id) => { const p=byId(id).paint; if (!p) return; t[p] = (t[p]||0) + Math.sqrt(liveGain(l)) * mv * play; });
+    layers.forEach((l, id) => { const p=byId(id).paint; if (!p) return; t[p] = (t[p]||0) + amt(l, id) * mv * play; });
     return t;
   }
   // 逐帧把 iCur 向目标缓动（~0.55s 时间常数）；reduced-motion 直接吸附。目标为 0 且已淡尽则回收。
@@ -66,7 +71,7 @@ export const scene = (() => {
   // 同一 paint 下多个声音按实时响度加权混色（回传 hex，兼容下游 hexToRgb）→ 画面颜色 = 真实混音的颜色。
   function tintOf(paint, fallback){
     let r=0, gg=0, bb=0, w=0;
-    layers.forEach((l,id)=>{ const c=byId(id); if (c.paint!==paint) return; const wt=Math.sqrt(liveGain(l)); if (wt<=0) return; const [cr,cg,cb]=hexToRgb(c.color); r+=cr*wt; gg+=cg*wt; bb+=cb*wt; w+=wt; });
+    layers.forEach((l,id)=>{ const c=byId(id); if (c.paint!==paint) return; const wt=amt(l, id); if (wt<=0) return; const [cr,cg,cb]=hexToRgb(c.color); r+=cr*wt; gg+=cg*wt; bb+=cb*wt; w+=wt; });
     if (w<=0) return fallback;
     const h = n => Math.max(0,Math.min(255,Math.round(n/w))).toString(16).padStart(2,'0');
     return '#'+h(r)+h(gg)+h(bb);
