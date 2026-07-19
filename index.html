@@ -312,6 +312,7 @@
   :focus-visible { outline: 2px solid var(--aurora); outline-offset: 3px; border-radius: 8px; }
   /* 移动端：放大触控尺寸；分类页签换行全部可见（不再横滚藏 INDOOR/WARM/CALM）*/
   @media (max-width: 480px){
+    .tagline { letter-spacing: .12em; }                 /* 收紧字距，窄屏不换行 */
     .tabs { flex-wrap: wrap; row-gap: 3px; overflow-x: visible; }
     .tab { padding: 9px 12px; font-size: 12px; }
     .tab[aria-selected="true"]::after { left: 12px; right: 12px; }
