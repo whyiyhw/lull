@@ -76,7 +76,7 @@ export const scene = (() => {
     layers.forEach((l,id)=>{ const c=byId(id); if (c.paint!==paint) return; const wt=amt(l, id); if (wt<=0) return; const [cr,cg,cb]=hexToRgb(c.color); r+=cr*wt; gg+=cg*wt; bb+=cb*wt; w+=wt; });
     const h = n => Math.max(0,Math.min(255,Math.round(n/w))).toString(16).padStart(2,'0');
     const col = w<=0 ? fallback : '#'+h(r)+h(gg)+h(bb);
-    return isDark ? col : deepen(col, 0.8);   // 浅色主题：气象色加深一档，在浅底上提对比（白天增强）
+    return isDark ? col : deepen(col, 0.6);   // 浅色主题：气象色显著加深加饱和（墨色落纸），在浅底上立住对比（白天增强）
   }
 
   function draw(now){
@@ -87,7 +87,7 @@ export const scene = (() => {
     const dt = Math.min(0.05, (now-lastT)/1000); lastT = now;
     stepIntensities(dt);                                                            // 迟滞镜像：每帧把画面强度朝当前混音缓动
     const dark = curTheme()==='dark';
-    isDark = dark; dayK = dark ? 1 : 1.5;                                          // 浅色主题（白天）气象对比增强
+    isDark = dark; dayK = dark ? 1 : 1.6;                                          // 浅色主题（白天）气象对比增强
     // 背景
     const top = themeVar('--scene-top'), bot = themeVar('--scene-bot');
     const bg = g.createLinearGradient(0,0,0,H); bg.addColorStop(0,top); bg.addColorStop(1,bot);
