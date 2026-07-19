@@ -239,7 +239,8 @@
   .stn.alt { top: 17px; }                               /* 相邻频道错行，避开横向重合 */
   @media (max-width: 430px){ .stn { max-width: 58px; font-size: 11px; } .stn.alt { top: 15px; } }
   .stn.near { color: var(--ink-dim); }
-  .stn.lit { color: var(--warm); text-shadow: 0 0 12px color-mix(in oklab, var(--warm) 55%, transparent); }
+  .stn.lit { color: var(--warm); font-weight: 600; text-shadow: 0 0 15px color-mix(in oklab, var(--warm) 72%, transparent); }
+  .stn.lit::after { opacity: 1; width: 5px; height: 5px; box-shadow: 0 0 7px currentColor; }   /* 当前频道：发光的定位点 */
   .stn.custom { cursor: grab; }
   .stn.custom::after { width: 5px; height: 5px; background: transparent; border: 1px solid currentColor; opacity: .6; }
   .stn.custom.dragging { cursor: grabbing; color: var(--warm); z-index: 3; }
@@ -309,6 +310,17 @@
   body.immersive .datemeta { opacity: 0; pointer-events: none; }   /* 沉浸态仅留场景 + 时钟（D11④）*/
 
   :focus-visible { outline: 2px solid var(--aurora); outline-offset: 3px; border-radius: 8px; }
+  /* 移动端：放大触控尺寸；分类页签换行全部可见（不再横滚藏 INDOOR/WARM/CALM）*/
+  @media (max-width: 480px){
+    .tabs { flex-wrap: wrap; row-gap: 3px; overflow-x: visible; }
+    .tab { padding: 9px 12px; font-size: 12px; }
+    .tab[aria-selected="true"]::after { left: 12px; right: 12px; }
+    .tchip { padding: 9px 15px; font-size: 12.5px; }
+    .cell { padding: 10px 15px; font-size: 13.5px; }
+    .now { font-size: 11.5px; }
+    .station-now { font-size: 16px; }
+  }
+
   @media (prefers-reduced-motion: reduce) { *:not(#scene) { animation: none !important; transition: none !important; } }
 </style>
 </head>

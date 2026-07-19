@@ -92,6 +92,7 @@ export function t(key, ...args){
 
 // 刷新 index.html 里的静态标签（切换语言或启动时调用）；动态文案由各 reflect* 重跑。
 export function applyStaticStrings(){
+  document.documentElement.setAttribute('lang', locale === 'zh' ? 'zh-CN' : 'en');   // <html lang> 跟随当前语言（屏幕阅读器/语义一致）
   const A = (id, attr, key) => { const el = $(id); if (el) el.setAttribute(attr, t(key)); };
   const T = (id, key) => { const el = $(id); if (el) el.textContent = t(key); };
   T('tagline', 'tagline');
