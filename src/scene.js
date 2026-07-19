@@ -1,7 +1,7 @@
 // 生成式场景：整屏 canvas 按当前混音 + 音量聚合「气象强度」逐帧作画。
 // 加一种画法：写一个 drawXxx，在 draw() 里按 intensity('paint') 调用即可。
 import { $, rand, root, curTheme } from './util.js';
-import { byId } from './data.js';
+import { byId, currentRainSurface } from './data.js';
 import { layers, volOf, masterVol, masterPlaying } from './state.js';
 
 export const scene = (() => {
@@ -112,8 +112,8 @@ export const scene = (() => {
     const ifo = intensity('forest'); if (ifo>0.01) drawMotesLike(ifo, tintOf('forest','#7fd08a'), 1, now, false);
     // 风
     const iw = intensity('wind'); if (iw>0.01) drawWind(iw, tintOf('wind','#bfe6cf'), dt, dark);
-    // 雨
-    const ir = intensity('rain'); if (ir>0.01) drawRain(ir, tintOf('rain','#9cc2ff'), dt, dark);
+    // 雨（含「打在什么上」的画面微差：屋檐檐影 / 窗玻璃水痕 / 树叶染绿散落 / 水面涟漪）
+    const ir = intensity('rain'); if (ir>0.01) drawRain(ir, tintOf('rain','#9cc2ff'), dt, dark, currentRainSurface(), now);
     // 落雪
     const isn = intensity('snow'); if (isn>0.01) drawSnow(isn, tintOf('snow','#dbe7ff'), now, dt);
     // 室内薄雾（呼吸）
@@ -218,11 +218,28 @@ export const scene = (() => {
     }
     g.globalAlpha=1;
   }
-  function drawRain(I, col, dt, dark){
-    const [r,gg,bb]=hexToRgb(col); const count=Math.floor(rainP.length*I);
-    g.lineWidth=1.1;
-    for (let i=0;i<count;i++){ const p=rainP[i]; if (!reduce){ p.y += p.sp*(0.8+I)*(dt*60); p.x += p.sp*0.18*(dt*60); if (p.y>H){ p.y=-p.len; p.x=rand()*W; } }
-      g.strokeStyle=`rgba(${r},${gg},${bb},${0.28*I})`; g.beginPath(); g.moveTo(p.x,p.y); g.lineTo(p.x - 2, p.y+p.len); g.stroke(); }
+  function drawRain(I, col, dt, dark, surf, now){
+    let [r,gg,bb]=hexToRgb(col);
+    const sid = surf ? surf.id : 'leaves';
+    if (sid==='leaves'){ gg=Math.min(255,gg+20); r=Math.max(0,r-8); }             // 树叶：整体微染绿、更柔
+    if (sid==='eaves'){ const bd=g.createLinearGradient(0,0,0,H*0.15);            // 屋檐：顶部一条柔和暗带（檐影感），雨从其下落
+      bd.addColorStop(0,`rgba(0,0,0,${(dark?0.30:0.16)*Math.min(1,I+0.3)})`); bd.addColorStop(1,'rgba(0,0,0,0)'); g.fillStyle=bd; g.fillRect(0,0,W,H*0.15); }
+    // 基础雨丝（加粗提亮——小雨也看得见）
+    const count=Math.floor(rainP.length*I), a=(sid==='glass'?0.26:0.42)*I;
+    g.lineWidth=1.3;
+    for (let i=0;i<count;i++){ const p=rainP[i];
+      if (!reduce){ p.y += p.sp*(0.8+I)*(dt*60); p.x += p.sp*0.18*(dt*60); if (p.y>H){ p.y=-p.len; p.x=rand()*W; } }
+      const jx = sid==='leaves' ? Math.sin(p.y/26+p.x*0.05)*1.4 : 0;              // 树叶：落点微散
+      g.strokeStyle=`rgba(${r},${gg},${bb},${a})`; g.beginPath(); g.moveTo(p.x,p.y); g.lineTo(p.x-2+jx, p.y+p.len); g.stroke(); }
+    if (sid==='glass' && !reduce){                                               // 窗玻璃：几道缓缓下淌的水痕（附着感）
+      g.lineWidth=2;
+      for (let k=0;k<8;k++){ const x=((k*163)%100)/100*W, t=(now/1500+k*0.61)%1, y0=t*H, len=44+70*I;
+        g.strokeStyle=`rgba(${r},${gg},${bb},${0.30*I})`; g.beginPath(); g.moveTo(x,y0); g.lineTo(x+Math.sin(now/650+k)*3, y0+len); g.stroke(); } }
+    if (sid==='water'){                                                          // 水面：底部落点一圈圈涟漪
+      g.lineWidth=1.4;
+      for (let k=0;k<6;k++){ const ph=(now/950+k*0.31)%1, cx=((k*61+20)%100)/100*W, cy=H*(0.80+(k%3)*0.05), rad=8+ph*64*(0.5+0.5*I), aa=(1-ph)*(1-ph)*0.34*I;
+        g.strokeStyle=`rgba(${r},${gg},${bb},${aa})`; g.beginPath(); g.arc(cx,cy,rad,0,6.283); g.stroke(); } }
+    g.globalAlpha=1;
   }
   let grainTile=null;
   function drawGrain(I, col){
