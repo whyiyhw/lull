@@ -16,6 +16,13 @@ export function setMasterPlaying(v){ masterPlaying = v; }
 export let masterVol = parseInt(localStorage.getItem('lull.mvol') || '70', 10);
 export function setMasterVolState(v){ masterVol = v; }
 
+// 语言（zh/en）：live binding + setter，供 i18n.js 与 data.js 在读取时解析当前语言。
+export let locale = (() => {
+  try { const s = localStorage.getItem('lull.lang'); if (s === 'zh' || s === 'en') return s; } catch (e) {}
+  return (typeof navigator !== 'undefined' && (navigator.language || '').toLowerCase().startsWith('zh')) ? 'zh' : 'en';
+})();
+export function setLocaleState(v){ locale = v; }
+
 export const soundVol = JSON.parse(localStorage.getItem('lull.svol') || '{}');   // id -> 0..1，原地写入
 
 export const volOf = id => (id in soundVol ? soundVol[id] : 0.6);

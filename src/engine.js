@@ -6,6 +6,7 @@ import {
 } from './state.js';
 import { $, rand } from './util.js';
 import { byId, currentRainSurface } from './data.js';
+import { t } from './i18n.js';
 import { scene } from './scene.js';
 import { wireSynthEvents, wireSceneEmitters, buildBowl } from './synth.js';
 import { setupKeepAlive, setupMediaSession, keepAlive, attemptRecover, updateMediaSession } from './lockscreen.js';
@@ -78,7 +79,7 @@ function loadFileBuffer(cfg){
 }
 function notifyFallback(){
   if (fallbackNoticed) return; fallbackNoticed = true;
-  toast('本地直开模式 · 部分声音改用合成');
+  toast(t('fallbackNotice'));
 }
 
 function buildLayer(cfg){
@@ -227,11 +228,11 @@ export function loadMix(mix, play){
   if (play){ if (!masterPlaying) setPlaying(true); else if (ctx) rampMaster_(masterTarget(), 0.3); }
   reflectChips(); renderMixer(); reflectState(); persistMix(); updateMediaSession(); reflectTuner();
 }
-function reflectResume(){
+export function reflectResume(){
   const btn=$('resume');
   if (pendingMix && layers.size===0){
     const names=Object.keys(pendingMix).map(id=>byId(id)&&byId(id).name).filter(Boolean).slice(0,4).join(' · ');
-    btn.textContent='继续上次 · '+names; btn.hidden=false;
+    btn.textContent=t('resumePrefix', names); btn.hidden=false;
   } else btn.hidden=true;
 }
 export function initRestore(){
@@ -244,8 +245,8 @@ export function initRestore(){
 // 供「继续上次」按钮调用（pendingMix 是本模块私有态）
 export function resumeLast(){ if (pendingMix){ const m=pendingMix; pendingMix=null; loadMix(m, true); } }
 export function shareMix(){
-  const mix=currentMix(); if (!Object.keys(mix).length){ toast('先挑一些声音再分享'); return; }
+  const mix=currentMix(); if (!Object.keys(mix).length){ toast(t('pickSomeToShare')); return; }
   const url=location.origin+location.pathname+'#'+mixToHash(mix);
-  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(()=>toast('混音链接已复制'), ()=>toast('复制失败 · 可手动复制地址栏'));
-  else toast('可复制地址栏链接分享');
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(()=>toast(t('linkCopied')), ()=>toast(t('copyFail')));
+  else toast(t('shareHint'));
 }

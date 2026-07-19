@@ -2,6 +2,7 @@
 import { $ } from './util.js';
 import { layers, ctx, masterPlaying } from './state.js';
 import { TIMERS } from './data.js';
+import { t } from './i18n.js';
 import { ensureCtx, setPlaying, rampMaster } from './engine.js';
 import { startDrift, stopDrift } from './audio/drift.js';
 import { nudge, reflectState } from './ui.js';
@@ -24,7 +25,8 @@ function setTimer(mins, id){
   }, 250);
 }
 export function initTimers(){
-  TIMERS.forEach(([id,label]) => { const b=document.createElement('button'); b.className='tchip'; b.dataset.id=id; b.setAttribute('aria-pressed', String(id==='off')); b.textContent=label; b.addEventListener('click', () => setTimer(id==='off'?0:parseInt(id,10), id)); $('timers').appendChild(b); });
+  $('timers').innerHTML='';   // 可重复调用（语言切换时重建 off 档位文案）
+  TIMERS.forEach(([id,label]) => { const b=document.createElement('button'); b.className='tchip'; b.dataset.id=id; b.setAttribute('aria-pressed', String(id==='off')); b.textContent = id==='off' ? t('timerOff') : label; b.addEventListener('click', () => setTimer(id==='off'?0:parseInt(id,10), id)); $('timers').appendChild(b); });
 }
 
 // ---------- 床头时钟（页面隐藏时停跳 F-5；秒针可切换 + 防烧屏漂移 F-9）----------
@@ -33,8 +35,8 @@ let showSec = localStorage.getItem('lull.showSec'); showSec = showSec===null ? t
 function tickClock(){
   const d = new Date(), hh = String(d.getHours()).padStart(2,'0'), mm = String(d.getMinutes()).padStart(2,'0'), ss = String(d.getSeconds()).padStart(2,'0');
   $('clock').innerHTML = hh+':'+mm + (showSec ? '<span class="sec">'+ss+'</span>' : '');
-  const wd = ['周日','周一','周二','周三','周四','周五','周六'][d.getDay()];
-  $('datemeta').textContent = (d.getMonth()+1)+'月'+d.getDate()+'日 · '+wd;
+  const wd = t('weekday', d.getDay());
+  $('datemeta').textContent = t('dateMeta', d.getMonth()+1, d.getDate(), wd);
   // 防烧屏：每分钟缓慢改变时钟位移，OLED 挂机 8h 无固定高对比常驻像素
   const mins = d.getHours()*60 + d.getMinutes();
   $('clock').style.transform = 'translate('+(Math.sin(mins*0.7)*7).toFixed(1)+'px,'+(Math.cos(mins*0.9)*5).toFixed(1)+'px)';

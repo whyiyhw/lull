@@ -2,12 +2,13 @@
 import { $, root, curTheme } from './util.js';
 import { masterVol, ctx, masterPlaying } from './state.js';
 import { scene } from './scene.js';                 // 导入即创建场景单例并起 rAF
-import { toggleMaster, clearAll, shareMix, setMasterVol, resumeLast, initRestore } from './engine.js';
-import { initTuner, saveCurrentAsPreset } from './tuner.js';
+import { toggleMaster, clearAll, shareMix, setMasterVol, resumeLast, initRestore, reflectResume } from './engine.js';
+import { initTuner, saveCurrentAsPreset, relocalizeTuner } from './tuner.js';
 import { buildTabs, renderTabs, renderChips, renderMixer, reflectPlay, reflectState } from './ui.js';
 import { startClock, stopClock, toggleSeconds, initTimers } from './timer.js';
 import { initImmersive, reflectFs, toggleFullscreen, requestWakeLock, releaseWakeLock, scheduleImmersive, clearIdle } from './immersive.js';
-import { keepAlive, attemptRecover } from './lockscreen.js';
+import { keepAlive, attemptRecover, updateMediaSession } from './lockscreen.js';
+import { applyStaticStrings, onLocaleChange, toggleLocale, t } from './i18n.js';
 
 // ---------- 主题 ----------
 const sun = 'M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z';
@@ -16,6 +17,15 @@ const paintTheme = () => $('theme-ico').innerHTML = '<path d="'+(curTheme()==='d
 const savedTheme = localStorage.getItem('lull.theme'); if (savedTheme) root.dataset.theme = savedTheme;
 paintTheme();
 $('theme').addEventListener('click', () => { const n = curTheme()==='dark'?'light':'dark'; root.dataset.theme = n; localStorage.setItem('lull.theme', n); paintTheme(); });
+
+// ---------- 语言（i18n · 中英）----------
+applyStaticStrings();                                  // 按当前语言刷新静态标签（tagline/aria/按钮…）
+$('lang').addEventListener('click', toggleLocale);
+onLocaleChange(() => {                                  // 切换语言：重渲染一切带文案的动态部分
+  buildTabs(); renderChips(); renderMixer(); relocalizeTuner();
+  reflectPlay(); reflectState(); reflectFs(); reflectResume(); updateMediaSession();
+  const off = document.querySelector('#timers .tchip[data-id="off"]'); if (off) off.textContent = t('timerOff');
+});
 
 // ---------- 事件 & 初始化 ----------
 buildTabs();       // 分类页签（一次性）

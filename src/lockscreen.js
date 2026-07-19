@@ -6,6 +6,7 @@ import { reflectState } from './ui.js';
 import { cancelTimer, setTimerChips } from './timer.js';
 import { matchStation } from './tuner.js';
 import { POEMS, byId, stationLine } from './data.js';
+import { L, t } from './i18n.js';
 
 let keepEl=null;
 function silentWavUrl(){
@@ -47,12 +48,12 @@ export function updateMediaSession(){
   try{
     navigator.mediaSession.playbackState = masterPlaying?'playing':'paused';
     const ids=[...layers.keys()], st=matchStation();
-    const title = ids.length===0 ? 'Lull · 声音电台'
+    const title = ids.length===0 ? t('appTitle')
                 : st ? (st.name+' · '+stationLine(st))
-                : ids.length===1 ? (POEMS[ids[0]]||byId(ids[0]).name)
+                : ids.length===1 ? (L(POEMS[ids[0]])||byId(ids[0]).name)
                 : ids.map(i=>byId(i).name).join(' · ');
     navigator.mediaSession.metadata = new MediaMetadata({
-      title, artist:'Lull · 声音电台', album:'Atmospheres',
+      title, artist:t('appTitle'), album:'Atmospheres',
       artwork:[{src:'icons/icon-192.png',sizes:'192x192',type:'image/png'},{src:'icons/icon-512.png',sizes:'512x512',type:'image/png'}]
     });
   }catch(e){}

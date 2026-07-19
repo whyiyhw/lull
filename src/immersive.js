@@ -2,6 +2,7 @@
 import { $ } from './util.js';
 import { masterPlaying } from './state.js';
 import { BUILTIN_PRESETS } from './data.js';
+import { t } from './i18n.js';
 import { toggleMaster } from './engine.js';
 import { tuneTo } from './tuner.js';
 import { toast } from './ui.js';
@@ -9,7 +10,7 @@ import { toast } from './ui.js';
 // 屏幕常亮：仅「播放且页面可见」时持有；不支持则一次性降级提示
 let wakeLock=null, wakeNoticed=false;
 export async function requestWakeLock(){
-  if (!('wakeLock' in navigator)){ if (!wakeNoticed){ wakeNoticed=true; toast('本机不支持屏幕常亮 · 挂机请手动保持亮屏'); } return; }
+  if (!('wakeLock' in navigator)){ if (!wakeNoticed){ wakeNoticed=true; toast(t('noWakeLock')); } return; }
   if (wakeLock || document.hidden || !masterPlaying) return;
   try{ wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', ()=>{ wakeLock=null; }); }catch(e){ wakeLock=null; }
 }
@@ -32,7 +33,7 @@ export function toggleFullscreen(){
   const el=document.documentElement;
   if (!document.fullscreenElement && !document.webkitFullscreenElement){
     const r=el.requestFullscreen||el.webkitRequestFullscreen;
-    if (r){ const p=r.call(el); if (p&&p.catch) p.catch(()=>{}); } else toast('此浏览器不支持全屏');
+    if (r){ const p=r.call(el); if (p&&p.catch) p.catch(()=>{}); } else toast(t('noFullscreen'));
   } else { (document.exitFullscreen||document.webkitExitFullscreen||function(){}).call(document); }
 }
 export function reflectFs(){
@@ -40,7 +41,7 @@ export function reflectFs(){
   $('fs-ico').innerHTML = on
     ? '<path d="M9 4v3a2 2 0 0 1-2 2H4M20 9h-3a2 2 0 0 1-2-2V4M4 15h3a2 2 0 0 1 2 2v3M15 20v-3a2 2 0 0 1 2-2h3"/>'
     : '<path d="M4 9V5a1 1 0 0 1 1-1h4M20 9V5a1 1 0 0 0-1-1h-4M4 15v4a1 1 0 0 0 1 1h4M20 15v4a1 1 0 0 1-1 1h-4"/>';
-  $('fullscreen').setAttribute('aria-label', on?'退出全屏（F）':'全屏（F）');
+  $('fullscreen').setAttribute('aria-label', on?t('fsExit'):t('fsEnter'));
 }
 
 // 挂机相关的全局监听 + 快捷键，集中在初始化时挂上
@@ -58,6 +59,6 @@ export function initImmersive(){
     if (e.key===' '){ if (guarded) return; e.preventDefault(); toggleMaster(); }
     else if (e.key==='f'||e.key==='F'){ if (guarded) return; e.preventDefault(); toggleFullscreen(); }
     else if (e.key==='Escape'){ exitImmersive(); }
-    else if (e.key>='1'&&e.key<='6'){ if (guarded) return; const p=BUILTIN_PRESETS[+e.key-1]; if (p){ tuneTo(p, true); toast('已调到「'+p.name+'」· '+p.fm.toFixed(1)); } }
+    else if (e.key>='1'&&e.key<='6'){ if (guarded) return; const p=BUILTIN_PRESETS[+e.key-1]; if (p){ tuneTo(p, true); toast(t('tunedTo', p.name, p.fm.toFixed(1))); } }
   });
 }

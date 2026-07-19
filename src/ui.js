@@ -1,6 +1,7 @@
 // UI 渲染：toast、播放/状态反映、混音台、声音格子 + 分类页签、细分子选择器。
 import { $ } from './util.js';
 import { CATS, SOUNDS, byId, POEMS, VARIANT_PICKERS, variantGet, variantSet, stationLine } from './data.js';
+import { L, t } from './i18n.js';
 import { layers, masterPlaying, volOf } from './state.js';
 import { toggleSound, setLayerVol, applyRainSurface } from './engine.js';
 import { matchStation } from './tuner.js';
@@ -12,22 +13,22 @@ export function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.a
 // ---------- 状态反映 ----------
 let flashT=0;
 function flashState(msg){ $('mixline').textContent = msg; clearTimeout(flashT); flashT = setTimeout(reflectState, 1800); }
-export function nudge(){ const b=$('play'); b.classList.remove('nudge'); void b.offsetWidth; b.classList.add('nudge'); flashState('先从下面挑一种声音'); }
+export function nudge(){ const b=$('play'); b.classList.remove('nudge'); void b.offsetWidth; b.classList.add('nudge'); flashState(t('pickSoundFirst')); }
 
 export function reflectPlay(){
   const btn = $('play'); btn.classList.toggle('playing', masterPlaying);
-  btn.setAttribute('aria-pressed', String(masterPlaying)); btn.setAttribute('aria-label', masterPlaying?'暂停':'播放');
+  btn.setAttribute('aria-pressed', String(masterPlaying)); btn.setAttribute('aria-label', masterPlaying?t('pause'):t('play'));
   $('play-ico').innerHTML = masterPlaying
     ? '<rect x="6.5" y="5" width="4" height="14" rx="1"/><rect x="13.5" y="5" width="4" height="14" rx="1"/>'
     : '<path d="M8 5.5v13a1 1 0 0 0 1.5.87l11-6.5a1 1 0 0 0 0-1.74l-11-6.5A1 1 0 0 0 8 5.5Z"/>';
 }
 export function reflectState(){
   const n = layers.size, ids = [...layers.keys()];
-  $('now').innerHTML = n===0 ? '静默' : (masterPlaying?'PLAYING · ':'PAUSED · ') + '<b>'+n+'</b> 层';
-  if (n===0){ $('mixline').textContent = '挑选声音，编织今晚的氛围'; return; }
+  $('now').innerHTML = n===0 ? t('silent') : (masterPlaying?'PLAYING · ':'PAUSED · ') + t('nowLayers', n);
+  if (n===0){ $('mixline').textContent = t('mixDefault'); return; }
   const st = matchStation();
   if (st){ $('mixline').textContent = stationLine(st); return; }
-  if (n===1){ $('mixline').textContent = POEMS[ids[0]] || byId(ids[0]).name; return; }
+  if (n===1){ $('mixline').textContent = L(POEMS[ids[0]]) || byId(ids[0]).name; return; }
   $('mixline').textContent = ids.map(i=>byId(i).name).join(' · ');
 }
 export function reflectChips(){ document.querySelectorAll('#sounds .cell').forEach(c => { const on = layers.has(c.dataset.id); c.setAttribute('aria-pressed', String(on)); c.style.background = on ? byId(c.dataset.id).color : ''; }); }
@@ -42,9 +43,9 @@ export function renderMixer(){
     const sw = document.createElement('span'); sw.className='swatch'; sw.style.background = s.color;
     const nm = document.createElement('span'); nm.className='nm'; nm.textContent = s.name;
     const sl = document.createElement('input'); sl.type='range'; sl.min=0; sl.max=100;
-    const v = Math.round(volOf(id)*100); sl.value=v; sl.style.setProperty('--fill', v+'%'); sl.setAttribute('aria-label', s.name+' 音量');
+    const v = Math.round(volOf(id)*100); sl.value=v; sl.style.setProperty('--fill', v+'%'); sl.setAttribute('aria-label', t('volSuffix', s.name));
     sl.addEventListener('input', e => { const val=parseInt(e.target.value,10); e.target.style.setProperty('--fill', val+'%'); setLayerVol(id, val); });
-    const rm = document.createElement('button'); rm.className='rm'; rm.setAttribute('aria-label','移除 '+s.name);
+    const rm = document.createElement('button'); rm.className='rm'; rm.setAttribute('aria-label', t('removeSuffix', s.name));
     rm.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
     rm.addEventListener('click', () => toggleSound(id));
     row.append(sw, nm, sl, rm); box.appendChild(row);
@@ -54,7 +55,7 @@ export function renderMixer(){
 // ---------- 分类页签 + 声音格子 ----------
 let activeCat = CATS[0].id;
 export function buildTabs(){
-  const tabsEl = $('tabs');
+  const tabsEl = $('tabs'); tabsEl.innerHTML='';   // 可重复调用（语言切换时重建页签文案）
   CATS.forEach(c => { const t=document.createElement('button'); t.className='tab'; t.setAttribute('role','tab'); t.dataset.cat=c.id; t.textContent=c.name; t.setAttribute('aria-selected', String(c.id===activeCat)); t.addEventListener('click', () => { activeCat=c.id; renderTabs(); renderChips(); }); tabsEl.appendChild(t); });
 }
 export function renderTabs(){ document.querySelectorAll('#tabs .tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.cat===activeCat))); }
@@ -89,14 +90,14 @@ function toggleVariant(p, id){
   const enableIfBound=()=>{ if (p.sound && byId(p.sound) && p.autoEnable!==false && !layers.has(p.sound)) toggleSound(p.sound); };
   if (p.mode==='single'){
     variantSet(p, id); if (p.sound==='__rain') applyRainSurface(); enableIfBound();   // 雨质地：实时重调活跃雨层滤波
-    toast('已选「'+nm+'」'); reflectVariantChips(p); return;
+    toast(t('variantSelected', nm)); reflectVariantChips(p); return;
   }
   const set=new Set(variantGet(p));
   if (set.has(id)){
-    if (set.size <= (p.min||0)){ toast('至少留一种'); return; }
-    set.delete(id); variantSet(p, [...set]); toast('已收起「'+nm+'」');
+    if (set.size <= (p.min||0)){ toast(t('variantKeepOne')); return; }
+    set.delete(id); variantSet(p, [...set]); toast(t('variantCollapsed', nm));
   } else {
-    set.add(id); variantSet(p, [...set]); enableIfBound(); toast('已加入「'+nm+'」');
+    set.add(id); variantSet(p, [...set]); enableIfBound(); toast(t('variantAdded', nm));
   }
   reflectVariantChips(p);
 }

@@ -2,6 +2,7 @@
 import { ctx, buffers, masterVol, layers } from './state.js';
 import { $ } from './util.js';
 import { BUILTIN_PRESETS } from './data.js';
+import { t } from './i18n.js';
 import { loadMix, ensureCtx, currentMix } from './engine.js';
 import { toast } from './ui.js';
 
@@ -54,9 +55,9 @@ function renderDial(){
   const box=$('dial-stations'); box.innerHTML='';
   stations().forEach(s=>{
     const b=document.createElement('button'); b.className='stn'+(s.custom?' custom':''); b.style.left=fmToPct(s.fm)+'%';
-    b.textContent=s.name; b.dataset.id=s.id; b.title=s.name+' · '+s.fm.toFixed(1)+(s.custom?' MHz · 拖动改频率 · 长按删除':' MHz');
+    b.textContent=s.name; b.dataset.id=s.id; b.title=s.name+' · '+s.fm.toFixed(1)+(s.custom?t('stationDragTitle'):' MHz');
     if (s.custom) wireStationDrag(b, s);
-    else b.addEventListener('click', e=>{ e.stopPropagation(); tuneTo(s, true); toast('已调到「'+s.name+'」· '+s.fm.toFixed(1)); });
+    else b.addEventListener('click', e=>{ e.stopPropagation(); tuneTo(s, true); toast(t('tunedTo', s.name, s.fm.toFixed(1))); });
     box.appendChild(b);
   });
   reflectTuner();
@@ -73,16 +74,16 @@ function wireStationDrag(b, s){
     if (!sd.moved) return;
     const r=$('dial-inner').getBoundingClientRect(), x=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));
     const fm=Math.max(FMIN+0.4, Math.min(FMAX-0.4, pctToFm(x*100)));
-    sd.fm=fm; b.style.left=fmToPct(fm)+'%'; b.title=s.name+' · '+fm.toFixed(1)+' MHz · 拖动改频率 · 长按删除';
+    sd.fm=fm; b.style.left=fmToPct(fm)+'%'; b.title=s.name+' · '+fm.toFixed(1)+t('stationDragTitle');
     if (b.classList.contains('lit')) setNeedle(fm, false);
   });
   const end=()=>{ clearLp(); if (!sd) return; const { moved, fm }=sd; sd=null; b.classList.remove('dragging');
-    if (moved){ setCustomFm(s.id, fm); renderDial(); toast('「'+s.name+'」移到 '+fm.toFixed(1)); }
-    else { tuneTo(s, true); toast('已调到「'+s.name+'」· 长按此频道可删除'); } };
+    if (moved){ setCustomFm(s.id, fm); renderDial(); toast(t('movedTo', s.name, fm.toFixed(1))); }
+    else { tuneTo(s, true); toast(t('tunedLongPress', s.name)); } };
   b.addEventListener('pointerup', end);
   b.addEventListener('pointercancel', ()=>{ clearLp(); if (sd){ sd=null; b.classList.remove('dragging'); renderDial(); } });
 }
-function deleteStation(s){ if (!s) return; saveCustomPresets(customPresets().filter(q=>q.id!==s.id)); renderDial(); toast('已删除频道「'+s.name+'」'); }
+function deleteStation(s){ if (!s) return; saveCustomPresets(customPresets().filter(q=>q.id!==s.id)); renderDial(); toast(t('stationDeleted', s.name)); }
 function setNeedle(fm, animate){
   curFm=fm; const dial=$('dial'); dial.classList.toggle('anim', !!animate);
   $('needle').style.left=fmToPct(fm)+'%';
@@ -102,16 +103,17 @@ export function reflectTuner(){
   document.querySelectorAll('#dial-stations .stn').forEach(b=> b.classList.toggle('lit', !!m && b.dataset.id===m.id));
   $('del-station').hidden = !(m && m.custom);
   if (m){ setNeedle(m.fm, true); $('station-now').textContent=m.name; dial.setAttribute('aria-valuetext', m.name); dial.classList.remove('manual'); }
-  else if (layers.size===0){ setNeedle(FMIN, true); $('freq').textContent='— —'; $('station-now').textContent='静默 · 未调频'; dial.setAttribute('aria-valuetext','未调频'); dial.classList.remove('manual'); }
-  else { $('station-now').textContent='手动调音'; dial.setAttribute('aria-valuetext','手动调音'); dial.classList.add('manual'); }
+  else if (layers.size===0){ setNeedle(FMIN, true); $('freq').textContent='— —'; $('station-now').textContent=t('silentUntuned'); dial.setAttribute('aria-valuetext',t('untuned')); dial.classList.remove('manual'); }
+  else { $('station-now').textContent=t('manualTune'); dial.setAttribute('aria-valuetext',t('manualTune')); dial.classList.add('manual'); }
 }
 function delActiveStation(){ const m=matchStation(); if (m && m.custom) deleteStation(m); }
+export function relocalizeTuner(){ renderDial(); }   // 语言切换：重建频道按钮文案 + reflectTuner
 
 function dialPointerFm(e){ const r=$('dial-inner').getBoundingClientRect(); const x=(e.clientX-r.left)/r.width; return pctToFm(Math.max(0,Math.min(1,x))*100); }
 function dialDrag(e){
   const fm=dialPointerFm(e); setNeedle(fm, false);
   const { s, d }=nearestStation(fm), near = s && d<SNAP;
-  $('station-now').textContent = near ? ('» '+s.name) : ('调频中 · '+fm.toFixed(1));
+  $('station-now').textContent = near ? ('» '+s.name) : t('tuningAt', fm.toFixed(1));
   document.querySelectorAll('#dial-stations .stn').forEach(b=> b.classList.toggle('near', near && b.dataset.id===s.id));
   tuneNoiseLevel(Math.max(0.1, Math.min(1, d/SNAP)));   // 越靠近频道 → 嘶声越低
 }
@@ -139,10 +141,10 @@ export function initTuner(){
   renderScale(); renderDial();
 }
 export function saveCurrentAsPreset(){
-  const mix=currentMix(); if (!Object.keys(mix).length){ toast('先挑一些声音'); return; }
-  const arr=customPresets(); if (arr.length>=8){ toast('自定义频道已满（上限 8）'); return; }
-  const def='频道 '+(arr.length+1); let name=def;
-  try{ const r=prompt('给这个频道起个名字', def); if (r===null) return; name=(r||def).trim().slice(0,10)||def; }catch(e){}
+  const mix=currentMix(); if (!Object.keys(mix).length){ toast(t('pickSomeFirst')); return; }
+  const arr=customPresets(); if (arr.length>=8){ toast(t('stationsFull')); return; }
+  const def=t('stationDefaultName', arr.length+1); let name=def;
+  try{ const r=prompt(t('namePrompt'), def); if (r===null) return; name=(r||def).trim().slice(0,10)||def; }catch(e){}
   const nfm=+Math.min(107.5, 102.4 + arr.length*1.2).toFixed(1);
-  arr.push({ id:'c'+Date.now(), name, mix, fm:nfm }); saveCustomPresets(arr); renderDial(); toast('已存为频道「'+name+'」· '+nfm.toFixed(1)+' · 可拖动改位');
+  arr.push({ id:'c'+Date.now(), name, mix, fm:nfm }); saveCustomPresets(arr); renderDial(); toast(t('savedAs', name, nfm.toFixed(1)));
 }

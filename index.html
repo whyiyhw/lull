@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Lull · 声音电台 · Night FM</title>
-<meta name="description" content="Lull · 声音电台 — 拧动调频拨盘在夜间频道间穿梭，混音驱动生成式气象，助眠与专注。" />
+<meta name="description" content="Lull · Sound Radio — a night-time ambient radio and generative weather mixer for sleep & focus. Local-first, offline, no account, no tracking. 声音电台 · 拧动调频拨盘，混音驱动生成式气象，助眠与专注。" />
 <meta name="theme-color" content="#0b1418" media="(prefers-color-scheme: dark)" />
 <meta name="theme-color" content="#eef3ee" media="(prefers-color-scheme: light)" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -14,21 +14,22 @@
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
 
-<!-- 社交分享卡片：微信/QQ/Telegram/Twitter 等靠 og:* 生成缩略图。
-     整站是 canvas，页面无 <img> 可供抓取，故显式给 og:image；必须是绝对 URL 的 ≥300×300 图。 -->
+<!-- 社交分享卡片（HN/Reddit/PH/Twitter/微信 等靠 og:* 生成预览）。
+     横版大图 og.png（1200×630，scripts/gen-og.mjs 离线生成）；文案英文为主、面向英文场。 -->
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="Lull" />
-<meta property="og:title" content="Lull · 声音电台 · Night FM" />
-<meta property="og:description" content="拧动调频拨盘在夜间频道间穿梭，混音驱动生成式气象，助眠与专注。" />
+<meta property="og:title" content="Lull — Sound Radio · Night FM" />
+<meta property="og:description" content="Tune a retro FM dial through night-time channels — your mix paints a live generative weather scene. Local-first, offline, no account, no tracking." />
 <meta property="og:url" content="https://lull.whyiyhw.com/" />
-<meta property="og:image" content="https://lull.whyiyhw.com/icons/icon-512.png" />
+<meta property="og:image" content="https://lull.whyiyhw.com/og.png" />
 <meta property="og:image:type" content="image/png" />
-<meta property="og:image:width" content="512" />
-<meta property="og:image:height" content="512" />
-<meta name="twitter:card" content="summary" />
-<meta name="twitter:title" content="Lull · 声音电台 · Night FM" />
-<meta name="twitter:description" content="拧动调频拨盘在夜间频道间穿梭，混音驱动生成式气象，助眠与专注。" />
-<meta name="twitter:image" content="https://lull.whyiyhw.com/icons/icon-512.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="Lull — an ambient radio for sleep & focus" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Lull — Sound Radio · Night FM" />
+<meta name="twitter:description" content="Tune a retro FM dial through night-time channels — your mix paints a live generative weather scene. Local-first, offline, no account." />
+<meta name="twitter:image" content="https://lull.whyiyhw.com/og.png" />
 <style>
   :root {
     --serif: ui-serif, "New York", "Songti SC", Georgia, "Times New Roman", serif;
@@ -283,11 +284,20 @@
   .dim-veil { position: fixed; inset: 0; z-index: 2; background: #04070a; opacity: 0; pointer-events: none; }
   :root[data-theme="light"] .dim-veil { background: #223028; }
 
+  /* 页脚署名 / 开源 / 反馈（很淡，随控制台一起在沉浸态隐去）*/
+  .credits { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px;
+    font-family: var(--mono); font-size: 11px; letter-spacing: .03em; color: var(--ink-faint); padding: 2px 0; }
+  .credits a { color: var(--ink-faint); text-decoration: none; display: inline-flex; align-items: center; gap: 5px; transition: color .16s; }
+  .cr-link:hover { color: var(--warm); }
+  .cr-by:hover { color: var(--ink-dim); }
+  .cr-dot { opacity: .5; }
+
   /* 沉浸挂机态（F-9）：播放中 8s 无交互 → 控制台与光标淡出，仅留场景 + 时钟；任意输入 300ms 内恢复 */
-  header, .console, .mixline, .datemeta { transition: opacity 1s ease, transform 1s ease; }
+  header, .console, .mixline, .datemeta, .credits { transition: opacity 1s ease, transform 1s ease; }
   body.waking header, body.waking .console, body.waking .mixline, body.waking .datemeta { transition: opacity .22s ease, transform .22s ease; }
   body.immersive { cursor: none; }
   body.immersive header,
+  body.immersive .credits,
   body.immersive .console { opacity: 0; transform: translateY(18px); pointer-events: none; }
   body.immersive .mixline { opacity: 0; }
   body.immersive .clock { font-size: clamp(84px, 20vmin, 340px); }
@@ -306,9 +316,10 @@
     <header>
       <div>
         <div class="wordmark">Lull</div>
-        <div class="tagline">声音电台 · Night FM</div>
+        <div class="tagline" id="tagline">声音电台 · Night FM</div>
       </div>
       <div class="head-actions">
+        <button class="icon-btn" id="lang" aria-label="切换语言 / English" title="切换语言 / English"><span id="lang-txt" style="font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.03em">EN</span></button>
         <button class="icon-btn" id="fullscreen" aria-label="全屏（F）" title="全屏 · F">
           <svg id="fs-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V5a1 1 0 0 1 1-1h4M20 9V5a1 1 0 0 0-1-1h-4M4 15v4a1 1 0 0 0 1 1h4M20 15v4a1 1 0 0 1-1 1h-4"/></svg>
         </button>
@@ -324,7 +335,7 @@
       <div class="mixline" id="mixline">挑选声音，编织今晚的氛围</div>
     </div>
 
-    <section class="console" aria-label="控制台">
+    <section class="console" id="console" aria-label="控制台">
       <div class="transport">
         <button class="play" id="play" aria-label="播放" aria-pressed="false">
           <svg id="play-ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.87l11-6.5a1 1 0 0 0 0-1.74l-11-6.5A1 1 0 0 0 8 5.5Z"/></svg>
@@ -358,7 +369,7 @@
 
       <div class="mixer empty-hide" id="mixer-wrap">
         <div class="mixer-head">
-          <span class="eyebrow">Mix · 混音台</span>
+          <span class="eyebrow" id="mix-eyebrow">Mix · 混音台</span>
           <div class="mix-actions">
             <button class="clear" id="share">Share</button>
             <button class="clear" id="clear">Clear</button>
@@ -378,6 +389,17 @@
         <span class="countdown" id="countdown"></span>
       </div>
     </section>
+
+    <footer class="credits">
+      <a class="cr-link" id="cr-star" href="https://github.com/whyiyhw/lull" target="_blank" rel="noopener">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.1 1.2 6L12 16.9 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/></svg>
+        <span id="cr-star-txt">Star</span>
+      </a>
+      <span class="cr-dot">·</span>
+      <a class="cr-link" id="cr-feedback" href="https://github.com/whyiyhw/lull/issues" target="_blank" rel="noopener"><span id="cr-fb-txt">Feedback</span></a>
+      <span class="cr-dot">·</span>
+      <a class="cr-by" id="cr-by" href="https://github.com/whyiyhw" target="_blank" rel="noopener">made by whyiyhw</a>
+    </footer>
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
