@@ -11,6 +11,7 @@ export const scene = (() => {
   const stars=[], rainP=[], windP=[], motes=[], sparks=[], flashes=[], emberP=[], bokehP=[], railP=[], snowP=[], ripples=[], birdsP=[], blooms=[], metroP=[], paperP=[];
   const iCur = Object.create(null);   // paint -> 平滑后的强度：画面对混音的迟滞镜像（气象般晕开/消散，且随漂移呼吸）
   let oceanPhase=0;
+  let dayK=1, isDark=true;   // 每帧由 draw() 刷新：浅色主题（白天）气象对比增强（深色/夜晚 = 1，不动）
   // 帧率自适应 + 后台停画（F-2 / F-5）
   let running=true, frameReq=0, lastFrame=0;
   const FAST = new Set(['rain','fire','birds','grain','wind','rail','ocean','snow','metro']);   // snow 是连续粒子系统，应保持满帧（D11③）；metro 灯柱横扫需满帧
@@ -57,7 +58,7 @@ export const scene = (() => {
     const keys = new Set(); for (const p in iCur) keys.add(p); for (const p in t) keys.add(p);
     keys.forEach(p => { const cur=iCur[p]||0, tg=t[p]||0, nv=cur+(tg-cur)*k; if (nv<0.0008 && tg===0) delete iCur[p]; else iCur[p]=nv; });
   }
-  function intensity(paint){ return Math.min(1, iCur[paint]||0); }
+  function intensity(paint){ return Math.min(1, (iCur[paint]||0) * dayK); }   // 浅色主题按 dayK 提亮（clamp≤1）
   // 时段染色：地平线暖光随真实时间在「黄昏琥珀 / 深夜近无 / 黎明玫瑰」间极缓移动，让电台知道现在几点。
   // 高斯按 24h 环绕加权两个暖调；深夜衰减到近无，守夜·玻璃护栏（很淡、不 kitsch）。
   function gaussWrap(x, mu, sig){ const d=Math.min(Math.abs(x-mu), 24-Math.abs(x-mu)); return Math.exp(-(d*d)/(2*sig*sig)); }
@@ -69,12 +70,13 @@ export const scene = (() => {
     return { r:(dc[0]*dusk+wc[0]*dawn)/w|0, g:(dc[1]*dusk+wc[1]*dawn)/w|0, b:(dc[2]*dusk+wc[2]*dawn)/w|0, a:0.11*Math.max(dusk,dawn) };
   }
   // 同一 paint 下多个声音按实时响度加权混色（回传 hex，兼容下游 hexToRgb）→ 画面颜色 = 真实混音的颜色。
+  function deepen(hex, k){ const [r,g2,b]=hexToRgb(hex); const h=n=>Math.max(0,Math.min(255,Math.round(n*k))).toString(16).padStart(2,'0'); return '#'+h(r)+h(g2)+h(b); }
   function tintOf(paint, fallback){
     let r=0, gg=0, bb=0, w=0;
     layers.forEach((l,id)=>{ const c=byId(id); if (c.paint!==paint) return; const wt=amt(l, id); if (wt<=0) return; const [cr,cg,cb]=hexToRgb(c.color); r+=cr*wt; gg+=cg*wt; bb+=cb*wt; w+=wt; });
-    if (w<=0) return fallback;
     const h = n => Math.max(0,Math.min(255,Math.round(n/w))).toString(16).padStart(2,'0');
-    return '#'+h(r)+h(gg)+h(bb);
+    const col = w<=0 ? fallback : '#'+h(r)+h(gg)+h(bb);
+    return isDark ? col : deepen(col, 0.8);   // 浅色主题：气象色加深一档，在浅底上提对比（白天增强）
   }
 
   function draw(now){
@@ -85,6 +87,7 @@ export const scene = (() => {
     const dt = Math.min(0.05, (now-lastT)/1000); lastT = now;
     stepIntensities(dt);                                                            // 迟滞镜像：每帧把画面强度朝当前混音缓动
     const dark = curTheme()==='dark';
+    isDark = dark; dayK = dark ? 1 : 1.5;                                          // 浅色主题（白天）气象对比增强
     // 背景
     const top = themeVar('--scene-top'), bot = themeVar('--scene-bot');
     const bg = g.createLinearGradient(0,0,0,H); bg.addColorStop(0,top); bg.addColorStop(1,bot);
