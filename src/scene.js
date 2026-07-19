@@ -104,6 +104,9 @@ export const scene = (() => {
     // 星空（夜）
     if (dark){ const sa = 0.5 - 0.35*intensity('grain'); for (const st of stars){ const tw = reduce?0.6:(0.5+0.5*Math.sin(now/900+st.ph)); g.globalAlpha = sa*tw*0.8; g.fillStyle='#dfe8ff'; g.beginPath(); g.arc(st.x,st.y,st.r,0,6.283); g.fill(); } g.globalAlpha=1; }
 
+    // 待机电台：仅空状态（没选声音）——低地平线 + 微弱频谱线，让首屏不空（冷紫=静默）
+    if (layers.size===0) drawStandby(now, dark);
+
     // 海浪
     const io = intensity('ocean'); if (io>0.01) drawOcean(io, tintOf('ocean','#5fd0c0'), dt, dark);
     // 雾（溪流/瀑布）
@@ -159,6 +162,22 @@ export const scene = (() => {
     frameReq = requestAnimationFrame(draw);
   }
 
+  // 待机电台视觉（静默态）：低地平线暖冷渐层 + 底部缓慢起伏的微弱频谱线；很淡、不抢时钟
+  function drawStandby(now, dark){
+    const [r,gg,bb]=hexToRgb(themeVar('--aurora-2'));   // 冷紫 = 夜/静默
+    // 慢速暗波：两团极淡冷色辉光缓缓漂移，给空状态一点「待机」呼吸（hero 可见、不抢时钟）
+    for (let k=0;k<2;k++){
+      const t=reduce?k*3:now/11000+k*3.2;
+      const cx=W*(0.5+0.42*Math.sin(t)), cy=H*(0.46+0.3*Math.cos(t*0.7+k)), rad=Math.max(W,H)*0.55;
+      const rg=g.createRadialGradient(cx,cy,0,cx,cy,rad), a=dark?0.05:0.028;
+      rg.addColorStop(0,`rgba(${r},${gg},${bb},${a})`); rg.addColorStop(1,`rgba(${r},${gg},${bb},0)`);
+      g.fillStyle=rg; g.fillRect(0,0,W,H);
+    }
+    // 低地平线：底部一条极淡辉光，给首屏一个「地平」
+    const hy=H*0.88, hg=g.createLinearGradient(0,H,0,hy);
+    hg.addColorStop(0,`rgba(${r},${gg},${bb},${dark?0.09:0.05})`); hg.addColorStop(1,`rgba(${r},${gg},${bb},0)`);
+    g.fillStyle=hg; g.fillRect(0,hy,W,H-hy);
+  }
   function drawAurora(now, alpha){
     const t = reduce?0:now/9000;
     for (let k=0;k<2;k++){
