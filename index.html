@@ -115,7 +115,7 @@
 
   /* 玻璃控制台 */
   .console {
-    background: var(--glass); border: 1px solid var(--line); border-radius: 26px;
+    background: var(--glass); border: 1px solid var(--line); border-radius: 22px;
     backdrop-filter: blur(20px) saturate(1.2); -webkit-backdrop-filter: blur(20px) saturate(1.2);
     box-shadow: 0 20px 60px rgba(0,0,0,.22); padding: 18px 18px 17px;
     display: flex; flex-direction: column; gap: 20px;
@@ -162,8 +162,9 @@
   .mixer.empty-hide { display: none; }
   .mixer-head { display: flex; align-items: center; justify-content: space-between; }
   .eyebrow { font-family: var(--serif); font-style: italic; font-size: 13px; letter-spacing: .01em; color: var(--ink-faint); }
-  .clear { appearance: none; border: none; background: none; color: var(--ink-faint); font-family: var(--mono); font-size: 10.5px; letter-spacing: .04em; cursor: pointer; }
-  .clear:hover { color: var(--warm); }
+  /* 次级按钮语言（统一）：Share / Clear / + Save as station / 移除频道 —— 描边 pill */
+  .clear, .save-preset, .del-station { appearance: none; border: 1px solid var(--line); background: transparent; color: var(--ink-dim); font-family: var(--mono); font-size: 10.5px; letter-spacing: .04em; padding: 5px 11px; border-radius: 9px; cursor: pointer; transition: color .15s, border-color .15s, background .15s; }
+  .clear:hover, .save-preset:hover, .del-station:hover { color: var(--ink); border-color: var(--line-strong); background: color-mix(in oklab, var(--glass-2) 55%, transparent); }
   .layer { display: grid; grid-template-columns: 4px 60px 1fr auto; align-items: center; gap: 10px; }
   .layer .swatch { width: 4px; height: 22px; border-radius: 2px; }
   .layer .nm { font-size: 12.5px; white-space: nowrap; }
@@ -235,8 +236,7 @@
   .freq-u { font-family: var(--mono); font-size: 10.5px; letter-spacing: .18em; color: var(--ink-faint); text-transform: uppercase; }
   .station-now { font-family: var(--serif); font-style: italic; font-size: 15px; color: var(--ink-dim); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: color .25s; }
   .station-now.cur { color: var(--warm); }   /* 暖=当前频道 */
-  .del-station { appearance: none; border: none; background: none; color: var(--ink-faint); font-family: var(--mono); font-size: 10.5px; letter-spacing: .04em; cursor: pointer; flex: none; }
-  .del-station:hover { color: var(--warm); }
+  .del-station { flex: none; }   /* 样式并入统一次级按钮规则；仅保留布局 */
   .del-station[hidden] { display: none; }
 
   .dial { position: relative; height: 92px; border-radius: 16px; cursor: ew-resize; touch-action: none; user-select: none; -webkit-user-select: none; overflow: hidden;
@@ -279,8 +279,7 @@
   .resume:hover { border-color: var(--warm); }
   .resume:active { transform: scale(.985); }
   .resume[hidden] { display: none; }   /* 类选择器的 display:flex 会盖过 [hidden]，显式复位 */
-  .save-preset { appearance: none; border: none; background: none; color: var(--ink-faint); font-family: var(--mono); font-size: 10.5px; letter-spacing: .04em; cursor: pointer; flex: none; }
-  .save-preset:hover { color: var(--aurora); }
+  .save-preset { flex: none; }   /* 样式并入统一次级按钮规则；仅保留布局 */
   .save-preset[hidden] { display: none; }
   .mix-actions { display: flex; gap: 12px; }
 
