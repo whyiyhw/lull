@@ -1,12 +1,12 @@
 // Lull Service Worker —— 离线优先（F-6）
 // 核心壳 network-first（保证更新），音频/图标 cache-first（体积大、极少变）。
 // 改版时提升 VERSION 即可让旧缓存失效。
-const VERSION = 'lull-v3';
+const VERSION = 'lull-v4';
 const CORE = [
   './', 'index.html', 'manifest.webmanifest',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png',
 ];
-const AUDIO = ['forest', 'train', 'cafe'].map(n => 'audio/' + n + '.mp3');   // 仅保留 3 个 CC0/公有领域录音；小雨/雷雨/瀑布/大风/鸟鸣改用 CC0 合成（F-3 版权合规）
+const AUDIO = ['forest', 'train', 'cafe', 'hrain', 'ocean', 'stream', 'fire', 'breeze'].map(n => 'audio/' + n + '.mp3');   // 8 个 CC0/公有领域录音（Freesound）；小雨/雷雨/瀑布/大风/鸟鸣等仍用 CC0 合成
 
 self.addEventListener('install', (e) => {
   e.waitUntil((async () => {

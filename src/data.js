@@ -13,18 +13,18 @@ export const SOUNDS = [
   { id:'brown', name:'褐噪音', cat:'noise', base:'brown', color:'#e6b98a', paint:'grain' },
 
   { id:'lrain', name:'小雨', cat:'rain', base:'white', color:'#9cc2ff', paint:'rain', surface:true, filters:[{type:'highpass',freq:900,q:0.6},{type:'lowpass',freq:6800,q:0.6}] },
-  { id:'hrain', name:'大雨', cat:'rain', base:'white', color:'#7aa4ff', paint:'rain', surface:true, filters:[{type:'lowpass',freq:4200,q:0.5}] },
+  { id:'hrain', name:'大雨', cat:'rain', base:'white', color:'#7aa4ff', paint:'rain', file:'hrain.mp3', surface:true, filters:[{type:'lowpass',freq:4200,q:0.5}] },
   { id:'storm', name:'雷雨', cat:'rain', base:'white', color:'#6f8cf0', paint:'rain', surface:true, thunder:true, filters:[{type:'lowpass',freq:3800,q:0.5}] },
 
-  { id:'ocean',  name:'海浪', cat:'water', base:'brown', color:'#5fd0c0', paint:'ocean', filters:[{type:'lowpass',freq:520,q:0.6}], lfo:{rate:0.09,depth:0.36,target:'gain'} },
-  { id:'stream', name:'溪流', cat:'water', base:'pink',  color:'#7fd8e6', paint:'mist',  filters:[{type:'bandpass',freq:2300,q:1.1}], lfo:{rate:4.5,depth:600,target:'freq'}, reverb:0.25 },
+  { id:'ocean',  name:'海浪', cat:'water', base:'brown', color:'#5fd0c0', paint:'ocean', file:'ocean.mp3', filters:[{type:'lowpass',freq:520,q:0.6}], lfo:{rate:0.09,depth:0.36,target:'gain'} },
+  { id:'stream', name:'溪流', cat:'water', base:'pink',  color:'#7fd8e6', paint:'mist',  file:'stream.mp3', filters:[{type:'bandpass',freq:2300,q:1.1}], lfo:{rate:4.5,depth:600,target:'freq'}, reverb:0.25 },
   { id:'fall',   name:'瀑布', cat:'water', base:'white', color:'#a8e0ff', paint:'mist',  filters:[{type:'lowpass',freq:3200,q:0.4}] },
 
   { id:'forest', name:'森林', cat:'forest', base:'pink',  color:'#7fd08a', paint:'forest', file:'forest.mp3', filters:[{type:'bandpass',freq:2100,q:0.8}], lfo:{rate:0.15,depth:700,target:'freq'}, birds:'low',  reverb:0.4 },
   { id:'birds',  name:'鸟鸣', cat:'forest', base:null,    color:'#ffd48a', paint:'birds',  birds:'high', reverb:0.5 },
   { id:'insects',name:'虫鸣', cat:'forest', base:null,    color:'#c3e08a', paint:'bokeh',  insects:true, reverb:0.35 },
 
-  { id:'breeze', name:'微风', cat:'wind', base:'pink', color:'#bfe6cf', paint:'wind', filters:[{type:'lowpass',freq:520,q:0.5}], lfo:{rate:0.06,depth:300,target:'freq'} },
+  { id:'breeze', name:'微风', cat:'wind', base:'pink', color:'#bfe6cf', paint:'wind', file:'breeze.mp3', filters:[{type:'lowpass',freq:520,q:0.5}], lfo:{rate:0.06,depth:300,target:'freq'} },
   { id:'wind',   name:'大风', cat:'wind', base:'pink', color:'#9fd0b8', paint:'wind', filters:[{type:'lowpass',freq:840,q:0.6}], lfo:{rate:0.13,depth:520,target:'freq'} },
   { id:'snow',   name:'落雪', cat:'wind', base:'pink', color:'#dbe7ff', paint:'snow', filters:[{type:'lowpass',freq:1100,q:0.5}], lfo:{rate:0.05,depth:260,target:'freq'} },
 
@@ -35,7 +35,7 @@ export const SOUNDS = [
   { id:'pages',  name:'翻书', cat:'room', base:null,    color:'#e8dcc0', paint:'paper', pages:true, reverb:0.2 },
   { id:'tick',   name:'滴答', cat:'room', base:null,    color:'#c9d2dc', paint:'clock', tick:true },
 
-  { id:'fire', name:'篝火',   cat:'warm', base:'brown', color:'#ff9a5a', paint:'fire',  filters:[{type:'lowpass',freq:380,q:0.7}], lfo:{rate:0.5,depth:120,target:'freq'}, crackle:true, reverb:0.15 },
+  { id:'fire', name:'篝火',   cat:'warm', base:'brown', color:'#ff9a5a', paint:'fire',  file:'fire.mp3', filters:[{type:'lowpass',freq:380,q:0.7}], lfo:{rate:0.5,depth:120,target:'freq'}, crackle:true, reverb:0.15 },
   { id:'cafe', name:'咖啡馆', cat:'warm', base:'pink',  color:'#ffc59a', paint:'bokeh', file:'cafe.mp3', filters:[{type:'bandpass',freq:750,q:0.9}], lfo:{rate:0.4,depth:0.4,target:'gain'}, clink:true, reverb:0.3 },
   { id:'purr', name:'猫呼噜', cat:'warm', base:'brown', color:'#f0b58a', paint:'purr', filters:[{type:'lowpass',freq:220,q:0.8}], lfo:{rate:26,depth:0.55,target:'gain'} },
 

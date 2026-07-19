@@ -1,9 +1,14 @@
 # 音频版权 / Audio Credits
 
-`audio/` 目录现仅保留 **3 个 CC0 / 公有领域**录音（均来自 [Wikimedia Commons](https://commons.wikimedia.org)，
-裁剪为 60 秒、转码单声道 MP3，许可证经 Commons `extmetadata` 核验）。**全表可商用、无 copyleft**——
-原先 5 个 CC BY-SA 素材（小雨/雷雨/瀑布/鸟鸣/大风）已移除，改用引擎内置的 **CC0 程序合成**（F-3 版权合规，
-沿用 PRD §8「合成回退兜底」）。
+`public/audio/` 目录现有 **8 个 CC0 / 公有领域**录音，均转码单声道 MP3、过
+[`prep-audio`](scripts/prep-audio.mjs) 无缝循环流水线，许可证逐一核验，**全表可商用、无 copyleft**：
+
+- **3 个**来自 [Wikimedia Commons](https://commons.wikimedia.org)：`cafe` / `forest` / `train`。
+- **5 个**来自 [Freesound](https://freesound.org)（均 CC0，2026-07-18 经 API `license:"Creative Commons 0"`
+  过滤检索、逐条核验后下载 hq 预览）：`hrain` / `ocean` / `stream` / `fire` / `breeze`。
+
+原先 5 个 CC BY-SA 素材（小雨/雷雨/瀑布/鸟鸣/大风）此前已移除、改用引擎内置的 **CC0 程序合成**
+（F-3 版权合规，沿用 PRD §8「合成回退兜底」）；本批新增的 5 个真实录音替换了对应的合成占位。
 
 > 引擎说明（v0.2 起）：真实录音走 `fetch` + `decodeAudioData` 解码进 `AudioBufferSourceNode`（`loop=true`），
 > 与合成层共用同一套 gain / 混响 / 主总线。`AudioBufferSourceNode` 循环是采样级无缝的——**素材必须首尾可循环**
@@ -11,14 +16,19 @@
 >
 > 代码许可证：MIT（见 [LICENSE](LICENSE)）。以下音频许可证与代码彼此独立。
 
-| 文件 | 声音 | 许可证 | 商用 | 原始来源（Commons File:） |
+| 文件 | 声音 | 许可证 | 商用 | 原始来源 · 作者 |
 |---|---|---|---|---|
-| `cafe.mp3`   | 咖啡馆 | Public domain | ✅ | Restaurant ambience.ogg |
-| `forest.mp3` | 森林   | Public domain | ✅ | 20090610 0 ambience.ogg |
-| `train.mp3`  | 火车   | CC0           | ✅ | Taiwan railways EP727 train cars sounds.ogg |
+| `cafe.mp3`   | 咖啡馆 | Public domain | ✅ | Commons: Restaurant ambience.ogg |
+| `forest.mp3` | 森林   | Public domain | ✅ | Commons: 20090610 0 ambience.ogg |
+| `train.mp3`  | 火车   | CC0           | ✅ | Commons: Taiwan railways EP727 train cars sounds.ogg |
+| `hrain.mp3`  | 大雨   | CC0           | ✅ | Freesound [#200272](https://freesound.org/s/200272/) · @jmbphilmes |
+| `ocean.mp3`  | 海浪   | CC0           | ✅ | Freesound [#241824](https://freesound.org/s/241824/) · @haldigital97 |
+| `stream.mp3` | 溪流   | CC0           | ✅ | Freesound [#433589](https://freesound.org/s/433589/) · @jackthemurray |
+| `fire.mp3`   | 篝火   | CC0           | ✅ | Freesound [#350757](https://freesound.org/s/350757/) · @aerror |
+| `breeze.mp3` | 微风   | CC0           | ✅ | Freesound [#697217](https://freesound.org/s/697217/) · @dhallcomposer |
 
-**其余声音全部为 CC0 程序合成**（无音频文件）：白/粉/褐噪音、小雨、大雨、雷雨、海浪、溪流、瀑布、鸟鸣、
-微风、大风、落雪、风扇、空调、地铁、翻书、滴答、篝火、猫呼噜、颂钵、低鸣。
+**其余声音仍为 CC0 程序合成**（无音频文件）：白/粉/褐噪音、小雨、雷雨、瀑布、鸟鸣、虫鸣、
+大风、落雪、风扇、空调、地铁、翻书、滴答、猫呼噜、颂钵、低鸣。
 
 ## 素材流水线（F-3 · 消 D3）
 
@@ -28,7 +38,7 @@
 
 ```sh
 brew install ffmpeg                      # 依赖（一次）
-# 批处理：把原始录音丢进 audio/raw/，产出落到 audio/<同名>.mp3；再到 index.html 的 SOUNDS 给该声音加 file:'xx.mp3'
+# 批处理：把原始录音丢进 audio/raw/，产出落到 public/audio/<同名>.mp3；再到 src/data.js 的 SOUNDS 给该声音加 file:'xx.mp3'
 node scripts/prep-audio.mjs
 # 或单文件：node scripts/prep-audio.mjs 下载.wav lrain --xfade 3 --lufs -18
 pnpm prep-audio                          # 等价快捷命令
