@@ -25,6 +25,7 @@ const M = {
   soundsLabel:  { zh:'声音', en:'Sounds' },
   dialLabel:    { zh:'调频 · 频道选择', en:'Tune · station select' },
   mixEyebrow:   { zh:'Mix · 混音台', en:'Mix' },
+  qsLabel:      { zh:'快速开始', en:'Quick start' },
   // 页脚：开源 / 反馈（图标，文案仅作 aria/title）+ 署名
   crStarLabel:  { zh:'在 GitHub 上给 Lull 点 Star', en:'Star Lull on GitHub' },
   crFbLabel:    { zh:'提反馈 / 报问题（GitHub Issues）', en:'Send feedback / report an issue' },
@@ -106,6 +107,7 @@ export function applyStaticStrings(){
   T('del-station', 'removeStation');
   T('save-preset', 'saveStation');
   T('mix-eyebrow', 'mixEyebrow');
+  T('qs-label', 'qsLabel');
   T('lang-txt', 'langBtn');
   A('lang', 'aria-label', 'langLabel'); A('lang', 'title', 'langLabel');
   A('cr-star', 'aria-label', 'crStarLabel'); A('cr-star', 'title', 'crStarLabel');

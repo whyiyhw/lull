@@ -103,13 +103,25 @@ export function reflectTuner(){
   const dial=$('dial'), m=matchStation();
   document.querySelectorAll('#dial-stations .stn').forEach(b=> b.classList.toggle('lit', !!m && b.dataset.id===m.id));
   $('station-now').classList.toggle('cur', !!m);   // 色彩角色：暖=当前频道（station-now 转暖）
+  const qs=$('quickstart'); if (qs) qs.hidden = layers.size>0;   // 一键起始仅空状态显示
   $('del-station').hidden = !(m && m.custom);
   if (m){ setNeedle(m.fm, true); $('station-now').textContent=m.name; dial.setAttribute('aria-valuetext', m.name); dial.classList.remove('manual'); }
   else if (layers.size===0){ setNeedle(FMIN, true); $('freq').textContent='— —'; $('station-now').textContent=t('silentUntuned'); dial.setAttribute('aria-valuetext',t('untuned')); dial.classList.remove('manual'); }
   else { $('station-now').textContent=t('manualTune'); dial.setAttribute('aria-valuetext',t('manualTune')); dial.classList.add('manual'); }
 }
 function delActiveStation(){ const m=matchStation(); if (m && m.custom) deleteStation(m); }
-export function relocalizeTuner(){ renderDial(); }   // 语言切换：重建频道按钮文案 + reflectTuner
+export function relocalizeTuner(){ renderDial(); renderQuickstart(); }   // 语言切换：重建频道按钮文案 + reflectTuner
+
+// 一键起始：空状态推荐 4 个频道（雨·林·暖·眠四种意图），点一下即载入并播放；拨盘退为「探索」。
+const QUICKSTART = ['rainynight', 'morningforest', 'fireside', 'sleeprain'];
+export function renderQuickstart(){
+  const row=$('qs-row'); if (!row) return; row.innerHTML='';
+  QUICKSTART.forEach(id=>{ const st=BUILTIN_PRESETS.find(p=>p.id===id); if (!st) return;
+    const b=document.createElement('button'); b.className='qs-btn'; b.textContent=st.name;
+    b.addEventListener('click', ()=>{ ensureCtx(); if (ctx.state==='suspended') ctx.resume(); tuneTo(st, true); });
+    row.appendChild(b);
+  });
+}
 
 function dialPointerFm(e){ const r=$('dial-inner').getBoundingClientRect(); const x=(e.clientX-r.left)/r.width; return pctToFm(Math.max(0,Math.min(1,x))*100); }
 function dialDrag(e){
@@ -140,7 +152,7 @@ export function initTuner(){
     else if (e.key==='End'){ const l=stations(); if (l.length) tuneTo(l[l.length-1], true); e.preventDefault(); }
   });
   $('del-station').addEventListener('click', delActiveStation);
-  renderScale(); renderDial();
+  renderScale(); renderDial(); renderQuickstart();
 }
 export function saveCurrentAsPreset(){
   const mix=currentMix(); if (!Object.keys(mix).length){ toast(t('pickSomeFirst')); return; }

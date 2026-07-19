@@ -216,6 +216,18 @@
   .countdown { font-family: var(--mono); font-size: 11px; color: var(--warm); margin-left: auto; font-variant-numeric: tabular-nums; }
 
   /* 调频拨盘（电台）· 会话恢复 */
+  /* 一键起始：空状态推荐频道，暖橙「开始」调性；有声音即隐 */
+  .quickstart { display: flex; flex-direction: column; gap: 9px; }
+  .quickstart[hidden] { display: none; }
+  .qs-label { font-family: var(--serif); font-style: italic; font-size: 13px; color: var(--ink-faint); }
+  .qs-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .qs-btn { appearance: none; cursor: pointer; font-family: var(--sans); font-size: 13.5px; padding: 10px 16px; border-radius: 13px;
+    border: 1px solid color-mix(in oklab, var(--warm) 42%, var(--line-strong)); background: color-mix(in oklab, var(--warm) 9%, var(--glass-2));
+    color: var(--ink); display: inline-flex; align-items: center; gap: 8px; transition: border-color .15s, background .15s, transform .08s; }
+  .qs-btn::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--warm); box-shadow: 0 0 6px color-mix(in oklab, var(--warm) 60%, transparent); }
+  .qs-btn:hover { border-color: var(--warm); background: color-mix(in oklab, var(--warm) 15%, var(--glass-2)); }
+  .qs-btn:active { transform: scale(.96); }
+
   .tuner { display: flex; flex-direction: column; gap: 12px; }
   .tuner-top { display: flex; align-items: baseline; gap: 10px; }
   .freqread { display: flex; align-items: baseline; gap: 4px; flex: none; }
@@ -368,6 +380,11 @@
           </div>
           <input type="range" id="vol" min="0" max="100" value="70" aria-label="总音量" />
         </div>
+      </div>
+
+      <div class="quickstart" id="quickstart" hidden>
+        <span class="qs-label" id="qs-label">快速开始</span>
+        <div class="qs-row" id="qs-row"></div>
       </div>
 
       <div class="tuner" id="tuner-wrap">
