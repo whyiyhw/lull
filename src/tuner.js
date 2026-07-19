@@ -102,6 +102,7 @@ export function tuneTo(s, animate){
 export function reflectTuner(){
   const dial=$('dial'), m=matchStation();
   document.querySelectorAll('#dial-stations .stn').forEach(b=> b.classList.toggle('lit', !!m && b.dataset.id===m.id));
+  $('station-now').classList.toggle('cur', !!m);   // 色彩角色：暖=当前频道（station-now 转暖）
   $('del-station').hidden = !(m && m.custom);
   if (m){ setNeedle(m.fm, true); $('station-now').textContent=m.name; dial.setAttribute('aria-valuetext', m.name); dial.classList.remove('manual'); }
   else if (layers.size===0){ setNeedle(FMIN, true); $('freq').textContent='— —'; $('station-now').textContent=t('silentUntuned'); dial.setAttribute('aria-valuetext',t('untuned')); dial.classList.remove('manual'); }

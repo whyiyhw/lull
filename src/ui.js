@@ -17,6 +17,7 @@ export function nudge(){ const b=$('play'); b.classList.remove('nudge'); void b.
 
 export function reflectPlay(){
   const btn = $('play'); btn.classList.toggle('playing', masterPlaying);
+  document.body.classList.toggle('is-playing', masterPlaying);   // 色彩角色：暖=正在播放（now 文案微暖）
   btn.setAttribute('aria-pressed', String(masterPlaying)); btn.setAttribute('aria-label', masterPlaying?t('pause'):t('play'));
   $('play-ico').innerHTML = masterPlaying
     ? '<rect x="6.5" y="5" width="4" height="14" rx="1"/><rect x="13.5" y="5" width="4" height="14" rx="1"/>'

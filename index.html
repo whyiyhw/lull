@@ -144,7 +144,8 @@
   .transport-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
   .now { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; color: var(--ink-dim); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .now b { color: var(--warm); font-weight: 600; }
-  .master-val { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); font-variant-numeric: tabular-nums; flex: none; }
+  .master-val { font-family: var(--mono); font-size: 11px; color: color-mix(in oklab, var(--aurora) 50%, var(--ink-faint)); font-variant-numeric: tabular-nums; flex: none; }   /* 青=音量/流动 */
+  body.is-playing .now { color: color-mix(in oklab, var(--warm) 42%, var(--ink-dim)); }   /* 暖=正在播放 */
 
   input[type=range] {
     -webkit-appearance: none; appearance: none; width: 100%; height: 5px; border-radius: 99px;
@@ -173,7 +174,7 @@
   /* 分类 + 音色 */
   .tabs { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
   .tabs::-webkit-scrollbar { display: none; }
-  .tab { appearance: none; border: none; background: none; font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); padding: 5px 9px; cursor: pointer; position: relative; white-space: nowrap; border-radius: 8px; transition: color .15s; }
+  .tab { appearance: none; border: none; background: none; font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-dim); padding: 5px 9px; cursor: pointer; position: relative; white-space: nowrap; border-radius: 8px; transition: color .15s; }
   .tab[aria-selected="true"] { color: var(--ink); }
   .tab[aria-selected="true"]::after { content: ""; position: absolute; left: 9px; right: 9px; bottom: 0; height: 2px; border-radius: 2px; background: var(--aurora); }
 
@@ -220,7 +221,8 @@
   .freqread { display: flex; align-items: baseline; gap: 4px; flex: none; }
   .freq { font-family: var(--mono); font-size: 30px; font-weight: 600; letter-spacing: .01em; color: var(--warm); font-variant-numeric: tabular-nums; line-height: 1; text-shadow: 0 0 18px color-mix(in oklab, var(--warm) 42%, transparent); }
   .freq-u { font-family: var(--mono); font-size: 10.5px; letter-spacing: .18em; color: var(--ink-faint); text-transform: uppercase; }
-  .station-now { font-family: var(--serif); font-style: italic; font-size: 15px; color: var(--ink-dim); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .station-now { font-family: var(--serif); font-style: italic; font-size: 15px; color: var(--ink-dim); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: color .25s; }
+  .station-now.cur { color: var(--warm); }   /* 暖=当前频道 */
   .del-station { appearance: none; border: none; background: none; color: var(--ink-faint); font-family: var(--mono); font-size: 10.5px; letter-spacing: .04em; cursor: pointer; flex: none; }
   .del-station:hover { color: var(--warm); }
   .del-station[hidden] { display: none; }
