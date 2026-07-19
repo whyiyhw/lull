@@ -25,7 +25,7 @@ export function reflectPlay(){
 }
 export function reflectState(){
   const n = layers.size, ids = [...layers.keys()];
-  $('now').innerHTML = n===0 ? t('silent') : (masterPlaying?'PLAYING · ':'PAUSED · ') + t('nowLayers', n);
+  $('now').innerHTML = n===0 ? t('silent') : t('nowLayers', n);   // 去掉 PLAYING/PAUSED 前缀（状态由按钮图标 + 暖色承担），移动端不再截断
   if (n===0){ $('mixline').textContent = t('mixDefault'); return; }
   const st = matchStation();
   if (st){ $('mixline').textContent = stationLine(st); return; }
@@ -71,10 +71,15 @@ export function renderChips(){
   // 该分类下挂载的所有「子选择器」（鸟种/虫种/篝火性格/咖啡细节/雨的质地）
   VARIANT_PICKERS.filter(p => p.cat===activeCat).forEach(p => box.appendChild(buildVariantPicker(p)));
 }
+function pickerSummary(p){
+  const cur=variantGet(p); const sel = p.mode==='single' ? [cur] : cur;
+  return sel.map(id=>(p.members.find(m=>m.id===id)||{}).name).filter(Boolean).join(' · ');
+}
 function buildVariantPicker(p){
-  const wrap=document.createElement('div'); wrap.className='bird-picker';
-  const head=document.createElement('div'); head.className='bird-picker-head';
-  head.innerHTML='<span class="dot" style="color:'+p.dot+'"></span>'+p.label;
+  const wrap=document.createElement('div'); wrap.className='bird-picker'; wrap.dataset.pk=p.key;
+  const head=document.createElement('button'); head.type='button'; head.className='bird-picker-head'; head.setAttribute('aria-expanded','false');
+  head.innerHTML='<span class="dot" style="color:'+p.dot+'"></span><span class="bp-label">'+p.label+'</span><span class="bp-sum"></span><span class="bp-chev">▾</span>';
+  head.addEventListener('click', ()=>{ const open=wrap.classList.toggle('open'); head.setAttribute('aria-expanded', String(open)); });
   const row=document.createElement('div'); row.className='bird-chips'; row.setAttribute('role','group'); row.setAttribute('aria-label',p.label);
   const cur=variantGet(p); const on=id=> p.mode==='single' ? cur===id : cur.includes(id);
   p.members.forEach(m=>{
@@ -84,7 +89,9 @@ function buildVariantPicker(p){
     b.addEventListener('click', ()=>toggleVariant(p, m.id));
     row.appendChild(b);
   });
-  wrap.append(head, row); return wrap;
+  wrap.append(head, row);
+  head.querySelector('.bp-sum').textContent = pickerSummary(p);   // 收起时头部显所选摘要
+  return wrap;
 }
 function toggleVariant(p, id){
   const nm=(p.members.find(m=>m.id===id)||{}).name || id;
@@ -105,4 +112,5 @@ function toggleVariant(p, id){
 function reflectVariantChips(p){
   const cur=variantGet(p); const on=id=> p.mode==='single' ? cur===id : cur.includes(id);
   document.querySelectorAll('.bird-chip[data-pk="'+p.key+'"]').forEach(b=> b.setAttribute('aria-pressed', String(on(b.dataset.m))));
+  const sum=document.querySelector('.bird-picker[data-pk="'+p.key+'"] .bp-sum'); if (sum) sum.textContent=pickerSummary(p);
 }

@@ -196,9 +196,14 @@
   /* 细分子选择器（鸟种/虫种/篝火性格/咖啡细节/雨的质地，复用 .bird-* 类名） */
   .bird-picker { flex: 0 0 100%; width: 100%; margin-top: 4px; padding: 9px 11px; border-radius: 12px;
     border: 1px solid color-mix(in oklab, var(--line) 65%, transparent); background: color-mix(in oklab, var(--glass-2) 45%, transparent); display: flex; flex-direction: column; gap: 8px; }
-  .bird-picker-head { font-family: var(--serif); font-style: italic; font-size: 11px; color: var(--ink-faint); display: flex; align-items: center; gap: 7px; }
+  .bird-picker-head { appearance: none; width: 100%; padding: 0; background: none; border: none; text-align: left; cursor: pointer; font-family: var(--serif); font-style: italic; font-size: 11px; color: var(--ink-faint); display: flex; align-items: center; gap: 7px; }
+  .bp-sum { margin-left: auto; font-style: normal; font-family: var(--sans); font-size: 11px; color: var(--ink-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 52%; }
+  .bp-chev { flex: none; font-style: normal; font-size: 10px; color: var(--ink-faint); transition: transform .2s; }
+  .bird-picker.open .bp-chev { transform: rotate(180deg); }
+  .bird-picker.open .bp-sum { display: none; }
   .bird-picker-head .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; opacity: .7; }
-  .bird-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+  .bird-chips { display: none; flex-wrap: wrap; gap: 7px; }   /* 默认折叠，展开才显 */
+  .bird-picker.open .bird-chips { display: flex; }
   .bird-chip { appearance: none; cursor: pointer; font-family: var(--sans); font-size: 12.5px; padding: 6px 12px; border-radius: 11px;
     border: 1px solid var(--line-strong); background: transparent; color: var(--ink-dim); display: inline-flex; align-items: center; gap: 6px;
     transition: color .15s, border-color .15s, background .15s, transform .08s; }
@@ -228,6 +233,8 @@
   .qs-btn::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--warm); box-shadow: 0 0 6px color-mix(in oklab, var(--warm) 60%, transparent); }
   .qs-btn:hover { border-color: var(--warm); background: color-mix(in oklab, var(--warm) 15%, var(--glass-2)); }
   .qs-btn:active { transform: scale(.96); }
+  /* 空状态：拨盘退探索层——收起拨盘与频率行，让 quick start 主导首屏 */
+  body.is-empty .dial, body.is-empty .tuner-top { display: none; }
 
   .tuner { display: flex; flex-direction: column; gap: 12px; }
   .tuner-top { display: flex; align-items: baseline; gap: 10px; }
